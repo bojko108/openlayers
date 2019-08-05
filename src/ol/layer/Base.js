@@ -1,15 +1,17 @@
 /**
  * @module ol/layer/Base
  */
-import {abstract} from '../util.js';
+import { abstract } from '../util.js';
 import BaseObject from '../Object.js';
 import LayerProperty from './Property.js';
-import {clamp} from '../math.js';
-import {assign} from '../obj.js';
+import { clamp } from '../math.js';
+import { assign } from '../obj.js';
 
+import LayerInfo from '../daemon/layers/info/LayerInfo.js';
 
 /**
  * @typedef {Object} Options
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] Layer Info parameters.
  * @property {string} [className='ol-layer'] A CSS class name to set to the layer element.
  * @property {number} [opacity=1] Opacity (0, 1).
  * @property {boolean} [visible=true] Visibility.
@@ -24,7 +26,6 @@ import {assign} from '../obj.js';
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
  */
-
 
 /**
  * @classdesc
@@ -41,22 +42,21 @@ class BaseLayer extends BaseObject {
    * @param {Options} options Layer options.
    */
   constructor(options) {
-
     super();
 
     /**
      * @type {Object<string, *>}
      */
     const properties = assign({}, options);
-    properties[LayerProperty.OPACITY] =
-       options.opacity !== undefined ? options.opacity : 1;
-    properties[LayerProperty.VISIBLE] =
-       options.visible !== undefined ? options.visible : true;
+    properties[LayerProperty.OPACITY] = options.opacity !== undefined ? options.opacity : 1;
+    properties[LayerProperty.VISIBLE] = options.visible !== undefined ? options.visible : true;
     properties[LayerProperty.Z_INDEX] = options.zIndex;
-    properties[LayerProperty.MAX_RESOLUTION] =
-       options.maxResolution !== undefined ? options.maxResolution : Infinity;
-    properties[LayerProperty.MIN_RESOLUTION] =
-       options.minResolution !== undefined ? options.minResolution : 0;
+    properties[LayerProperty.MAX_RESOLUTION] = options.maxResolution !== undefined ? options.maxResolution : Infinity;
+    properties[LayerProperty.MIN_RESOLUTION] = options.minResolution !== undefined ? options.minResolution : 0;
+    properties[LayerProperty.LAYER_INFO] = new LayerInfo(this, options.metadata);
+    properties[LayerProperty.STYLES] = undefined;
+    properties[LayerProperty.LABELS] = undefined;
+    delete properties.metadata;
 
     /**
      * @type {string}
@@ -72,7 +72,27 @@ class BaseLayer extends BaseObject {
      * @private
      */
     this.state_ = null;
+  }
 
+  /**
+   * @return {boolean} Does this layer has a LayerInfo?
+   */
+  get hasLayerInfo() {
+    return !!this.get(LayerProperty.LAYER_INFO);
+  }
+
+  /**
+   * @return {import("../daemon/layers/info/LayerInfo").default}} layer info
+   */
+  get layerInfo() {
+    return this.get(LayerProperty.LAYER_INFO);
+  }
+
+  /**
+   * @return {import('../Map').default}
+   */
+  get map() {
+    return this.get(LayerProperty.MAP);
   }
 
   /**
@@ -136,9 +156,7 @@ class BaseLayer extends BaseObject {
    * @api
    */
   getExtent() {
-    return (
-      /** @type {import("../extent.js").Extent|undefined} */ (this.get(LayerProperty.EXTENT))
-    );
+    return /** @type {import("../extent.js").Extent|undefined} */ (this.get(LayerProperty.EXTENT));
   }
 
   /**
@@ -262,6 +280,5 @@ class BaseLayer extends BaseObject {
     this.set(LayerProperty.Z_INDEX, zindex);
   }
 }
-
 
 export default BaseLayer;

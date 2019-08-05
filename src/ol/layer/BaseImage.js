@@ -3,7 +3,6 @@
  */
 import Layer from './Layer.js';
 
-
 /**
  * @typedef {Object} Options
  * @property {number} [opacity=1] Opacity (0, 1).
@@ -23,8 +22,8 @@ import Layer from './Layer.js';
  * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
  * use {@link module:ol/Map#addLayer}.
  * @property {import("../source/Image.js").default} [source] Source for this layer.
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
-
 
 /**
  * @classdesc
@@ -38,15 +37,16 @@ import Layer from './Layer.js';
  * @api
  */
 class BaseImageLayer extends Layer {
-
   /**
    * @param {Options=} opt_options Layer options.
    */
   constructor(opt_options) {
     const options = opt_options ? opt_options : {};
+    
+    options.metadata.type = 'image';
+    
     super(options);
   }
-
 }
 
 export default BaseImageLayer;

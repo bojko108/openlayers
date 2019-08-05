@@ -1,19 +1,18 @@
 /**
  * @module ol/layer/Layer
  */
-import {listen, unlistenByKey} from '../events.js';
+import { listen, unlistenByKey } from '../events.js';
 import EventType from '../events/EventType.js';
-import {getChangeEventType} from '../Object.js';
+import { getChangeEventType } from '../Object.js';
 import BaseLayer from './Base.js';
 import LayerProperty from './Property.js';
-import {assign} from '../obj.js';
+import { assign } from '../obj.js';
 import RenderEventType from '../render/EventType.js';
 import SourceState from '../source/State.js';
 
 /**
  * @typedef {function(import("../PluggableMap.js").FrameState):HTMLElement} RenderFunction
  */
-
 
 /**
  * @typedef {Object} Options
@@ -35,8 +34,8 @@ import SourceState from '../source/State.js';
  * @property {import("../PluggableMap.js").default} [map] Map.
  * @property {RenderFunction} [render] Render function. Takes the frame state as input and is expected to return an
  * HTML element. Will overwrite the default rendering for the layer.
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
-
 
 /**
  * @typedef {Object} State
@@ -80,7 +79,6 @@ class Layer extends BaseLayer {
    * @param {Options} options Layer options.
    */
   constructor(options) {
-
     const baseOptions = assign({}, options);
     delete baseOptions.source;
 
@@ -119,9 +117,7 @@ class Layer extends BaseLayer {
       this.setMap(options.map);
     }
 
-    listen(this,
-      getChangeEventType(LayerProperty.SOURCE),
-      this.handleSourcePropertyChange_, this);
+    listen(this, getChangeEventType(LayerProperty.SOURCE), this.handleSourcePropertyChange_, this);
 
     const source = options.source ? /** @type {SourceType} */ (options.source) : null;
     this.setSource(source);
@@ -156,8 +152,8 @@ class Layer extends BaseLayer {
   }
 
   /**
-    * @inheritDoc
-    */
+   * @inheritDoc
+   */
   getSourceState() {
     const source = this.getSource();
     return !source ? SourceState.UNDEFINED : source.getState();
@@ -180,8 +176,7 @@ class Layer extends BaseLayer {
     }
     const source = this.getSource();
     if (source) {
-      this.sourceChangeKey_ = listen(source,
-        EventType.CHANGE, this.handleSourceChange_, this);
+      this.sourceChangeKey_ = listen(source, EventType.CHANGE, this.handleSourceChange_, this);
     }
     this.changed();
   }
@@ -215,6 +210,8 @@ class Layer extends BaseLayer {
    * @api
    */
   setMap(map) {
+    this.set(LayerProperty.MAP, map);
+
     if (this.mapPrecomposeKey_) {
       unlistenByKey(this.mapPrecomposeKey_);
       this.mapPrecomposeKey_ = null;
@@ -227,23 +224,31 @@ class Layer extends BaseLayer {
       this.mapRenderKey_ = null;
     }
     if (map) {
-      this.mapPrecomposeKey_ = listen(map, RenderEventType.PRECOMPOSE, function(evt) {
-        const renderEvent = /** @type {import("../render/Event.js").default} */ (evt);
-        renderEvent.frameState.layerStatesArray.push(this.getLayerState(false));
-      }, this);
+      this.mapPrecomposeKey_ = listen(
+        map,
+        RenderEventType.PRECOMPOSE,
+        function(evt) {
+          const renderEvent = /** @type {import("../render/Event.js").default} */ (evt);
+          renderEvent.frameState.layerStatesArray.push(this.getLayerState(false));
+        },
+        this
+      );
       this.mapRenderKey_ = listen(this, EventType.CHANGE, map.render, map);
       this.changed();
     }
   }
 
   /**
-   * Set the layer source.
+   * Set the layer source. This also sets `layer` property of the source
    * @param {SourceType} source The layer source.
    * @observable
    * @api
    */
   setSource(source) {
     this.set(LayerProperty.SOURCE, source);
+    if (source) {
+      source.setLayer(this);
+    }
   }
 
   /**
@@ -272,9 +277,7 @@ class Layer extends BaseLayer {
   createRenderer() {
     return null;
   }
-
 }
-
 
 /**
  * Return `true` if the layer is visible, and if the passed resolution is
@@ -285,9 +288,7 @@ class Layer extends BaseLayer {
  * @return {boolean} The layer is visible at the given resolution.
  */
 export function visibleAtResolution(layerState, resolution) {
-  return layerState.visible && resolution >= layerState.minResolution &&
-      resolution < layerState.maxResolution;
+  return layerState.visible && resolution >= layerState.minResolution && resolution < layerState.maxResolution;
 }
-
 
 export default Layer;

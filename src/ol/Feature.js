@@ -1,10 +1,48 @@
 /**
  * @module ol/Feature
  */
-import {assert} from './asserts.js';
-import {listen, unlisten, unlistenByKey} from './events.js';
+import { assert } from './asserts.js';
+import { listen, unlisten, unlistenByKey } from './events.js';
 import EventType from './events/EventType.js';
-import BaseObject, {getChangeEventType} from './Object.js';
+import BaseObject, { getChangeEventType } from './Object.js';
+import { getVectorContext } from './render.js';
+import { easeOut } from './easing.js';
+
+import { createFeatureStyle, calculateCenterPointOfExtent } from './daemon';
+import flashingOptions from './daemon/helpers/flashingOptions.js';
+
+/**
+ * Feature visibility states. If `undefined|null` the feature will be
+ * displayed using the layer style definition.
+ * @enum {string}
+ */
+export const FeatureState = Object.freeze({
+  /**
+   * Indicates that the feature should appear selected on the map.
+   */
+  SELECTED: 'selected',
+  /**
+   * Indicates that the feature should appear highlighted on the map.
+   */
+  HIGHLIGHTED: 'highlighted',
+  /**
+   * Indicates that the feature should not be displayed on the map.
+   */
+  HIDDEN: 'hidden'
+});
+
+/**
+ * @typedef FeatureAttribute
+ * @property {String} name
+ * @property {String} alias
+ * @property {Boolean} visible
+ * @property {Boolean} editable
+ * @property {String} type - should be with own typedef
+ * @property {Boolean} hasDomain
+ * @property {import('./daemon/layers/fields/Domain').default} domain
+ * @property {any} value
+ * @property {String|Number} code - probably code shouldn't be returned at all
+ */
 
 /**
  * @typedef {typeof Feature|typeof import("./render/Feature.js").default} FeatureClass
@@ -67,7 +105,6 @@ class Feature extends BaseObject {
    *     associated with a `geometry` key.
    */
   constructor(opt_geometryOrProperties) {
-
     super();
 
     /**
@@ -75,6 +112,17 @@ class Feature extends BaseObject {
      * @type {number|string|undefined}
      */
     this.id_ = undefined;
+
+    /**
+     * @private
+     * @type {import('./layer/Vector').default}
+     */
+    this._layer = undefined;
+
+    /**
+     * @type {FeatureState}
+     */
+    this._state = undefined;
 
     /**
      * @type {string}
@@ -101,9 +149,7 @@ class Feature extends BaseObject {
      */
     this.geometryChangeKey_ = null;
 
-    listen(
-      this, getChangeEventType(this.geometryName_),
-      this.handleGeometryChanged_, this);
+    listen(this, getChangeEventType(this.geometryName_), this.handleGeometryChanged_, this);
 
     if (opt_geometryOrProperties) {
       if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === 'function') {
@@ -115,6 +161,38 @@ class Feature extends BaseObject {
         this.setProperties(properties);
       }
     }
+  }
+  /**
+   * @param {import('./layer/Vector').default} layer
+   */
+  setLayer(layer) {
+    this._layer = layer;
+  }
+
+  /**
+   * layer this feature belongs to
+   * @type {import('./layer/Vector').default}
+   */
+  get layer() {
+    return this._layer;
+  }
+
+  /**
+   * Gets the feature state - indicates how the feature should be displayed on the map.
+   * If `undefined|null` the feature will be displayed using the layer style definition.
+   * @type {FeatureState}
+   */
+  get state() {
+    return this._state;
+  }
+  /**
+   * Set how the feature should be displayed on the map. If `undefined|null` the feature will be
+   * displayed using the layer style definition.
+   * @param {FeatureState} value
+   */
+  set state(value) {
+    this._state = value;
+    this.changed();
   }
 
   /**
@@ -146,9 +224,7 @@ class Feature extends BaseObject {
    * @observable
    */
   getGeometry() {
-    return (
-      /** @type {Geometry|undefined} */ (this.get(this.geometryName_))
-    );
+    return /** @type {Geometry|undefined} */ (this.get(this.geometryName_));
   }
 
   /**
@@ -210,8 +286,7 @@ class Feature extends BaseObject {
     }
     const geometry = this.getGeometry();
     if (geometry) {
-      this.geometryChangeKey_ = listen(geometry,
-        EventType.CHANGE, this.handleGeometryChange_, this);
+      this.geometryChangeKey_ = listen(geometry, EventType.CHANGE, this.handleGeometryChange_, this);
     }
     this.changed();
   }
@@ -263,17 +338,149 @@ class Feature extends BaseObject {
    * @api
    */
   setGeometryName(name) {
-    unlisten(
-      this, getChangeEventType(this.geometryName_),
-      this.handleGeometryChanged_, this);
+    unlisten(this, getChangeEventType(this.geometryName_), this.handleGeometryChanged_, this);
     this.geometryName_ = name;
-    listen(
-      this, getChangeEventType(this.geometryName_),
-      this.handleGeometryChanged_, this);
+    listen(this, getChangeEventType(this.geometryName_), this.handleGeometryChanged_, this);
     this.handleGeometryChanged_();
   }
-}
 
+  /**
+   * Get feature attributes. If the layer has metadata {@link LayerInfo} attribute values will be
+   * formatted with additional information.
+   * @param {Boolean} [returnNames] - return field names instead of aliases
+   * @param {Boolean} [returnDomainCodes] - return domain codes instead of values
+   * @param {Boolean} [doNotReturnDomain] - don't return the entire domain
+   * @return {Array<FeatureAttribute|Object>}
+   */
+  getAttributes(returnNames, returnDomainCodes, doNotReturnDomain) {
+    const layerInfo = this.layer.layerInfo;
+    const props = this.getProperties();
+    let result = [];
+
+    if (layerInfo) {
+      result = layerInfo.fields.map(field => ({
+        name: field.name,
+        alias: returnNames ? field.name : field.alias,
+        visible: field.visible,
+        editable: field.editable,
+        type: field.type,
+        hasDomain: field.hasDomain,
+        domain: doNotReturnDomain ? undefined : field.hasDomain ? field.domain : undefined,
+        value: returnDomainCodes ? props[field.name] : field.hasDomain ? field.domain.getValue(props[field.name]) : props[field.name],
+        // probably code shouldn't be returned at all
+        code: field.hasDomain ? props[field.name] : undefined
+      }));
+    } else {
+      for (let name in props) {
+        if (name === 'geometry') continue;
+        result.push({
+          name,
+          alias: name,
+          value: props[name]
+        });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Zoom to this feature
+   * @param {import('./View').FitOptions} [options={}] - additional parameters like padding, duration...
+   * @param {Number} [zoomLevel=17]
+   */
+  zoomTo(options = {}, zoomLevel = 17) {
+    const extent = this.getGeometry().getExtent();
+    if (extent[2] <= extent[0] || extent[3] <= extent[1]) {
+      // in case of a point object
+      this.layer.map.center = [extent[0], extent[1]];
+      this.layer.map.zoom = zoomLevel;
+    } else {
+      this.layer.map.getView().fit(extent, options);
+    }
+  }
+
+  /**
+   * Move to this feature
+   */
+  panTo() {
+    const extent = this.getGeometry().getExtent();
+    this.layer.map.center = calculateCenterPointOfExtent(extent);
+  }
+
+  /**
+   * Flash this feature
+   * @param {import('./daemon/helpers/flashingOptions').default} [options] - options for flash animation
+   */
+  flash(options) {
+    options = Object.assign({}, flashingOptions, options);
+    const layer = this.layer,
+      start = new Date().getTime(),
+      flashedFeature = this.clone(),
+      startFlashing = () => {
+        layer.on('postrender', animate);
+        layer.addFeature(flashedFeature);
+        this.layer.map.render();
+      },
+      stopFlashing = () => {
+        layer.removeFeature(flashedFeature);
+        layer.un('postrender', animate);
+      },
+      animate = event => {
+        const vectorContext = getVectorContext(event),
+          frameState = event.frameState,
+          flashGeom = flashedFeature.getGeometry().clone(),
+          elapsed = frameState.time - start,
+          elapsedRatio = elapsed / options.duration,
+          newRadius = easeOut(elapsedRatio) * options.radius + options.radius / 2,
+          opacity = easeOut(1 - elapsedRatio),
+          color = `rgba(${options.red},${options.green},${options.blue},${opacity})`,
+          style = createFeatureStyle({
+            stroke: {
+              color,
+              width: easeOut(elapsedRatio) * (options.radius * 2)
+            },
+            fill: { color },
+            circle: {
+              radius: newRadius,
+              stroke: {
+                color,
+                width: easeOut(elapsedRatio) * (options.radius * 2)
+              }
+            }
+          });
+
+        if (elapsed > options.duration) {
+          stopFlashing();
+          return;
+        } else {
+          vectorContext.setStyle(style);
+          vectorContext.drawGeometry(flashGeom);
+
+          this.layer.map.render();
+        }
+      };
+
+    startFlashing();
+  }
+
+  // /**
+  //  *
+  //  * @param {import('./daemon/layers/relationships').default} relationship
+  //  */
+  // getRelatedFeatures(relationship) {
+  //   const layer = this.layer.map.getLayerBy('layerId', relationship.relatedTableId);
+  //   if (!layer) {
+  //     throw `Layer with id: ${relationship.relatedTableId} was not found!`;
+  //   }
+  //   const fid = this.getId().toString();
+  //   const id = fid.substring(fid.lastIndexOf('.') + 1);
+  //   // @ts-ignore
+  //   layer.search({ where: `STAN_OID = ${id}` }).then(features => {
+  //     console.log(features);
+  //   });
+  // }
+}
 
 /**
  * Convert the provided object into a feature style function.  Functions passed
@@ -294,8 +501,7 @@ export function createStyleFunction(obj) {
     if (Array.isArray(obj)) {
       styles = obj;
     } else {
-      assert(typeof /** @type {?} */ (obj).getZIndex === 'function',
-        41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+      assert(typeof /** @type {?} */ (obj).getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
       const style = /** @type {import("./style/Style.js").default} */ (obj);
       styles = [style];
     }

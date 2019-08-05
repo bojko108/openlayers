@@ -3,8 +3,7 @@
  */
 import Layer from './Layer.js';
 import TileProperty from './TileProperty.js';
-import {assign} from '../obj.js';
-
+import { assign } from '../obj.js';
 
 /**
  * @typedef {Object} Options
@@ -29,8 +28,8 @@ import {assign} from '../obj.js';
  * temporary layers. The standard way to add a layer to a map and have it managed by the map is to
  * use {@link module:ol/Map#addLayer}.
  * @property {boolean} [useInterimTilesOnError=true] Use interim tiles on error.
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
-
 
 /**
  * @classdesc
@@ -54,54 +53,54 @@ class BaseTileLayer extends Layer {
 
     delete baseOptions.preload;
     delete baseOptions.useInterimTilesOnError;
+
+    baseOptions.metadata.type = 'basemap';
+
     super(baseOptions);
 
     this.setPreload(options.preload !== undefined ? options.preload : 0);
-    this.setUseInterimTilesOnError(options.useInterimTilesOnError !== undefined ?
-      options.useInterimTilesOnError : true);
-
+    this.setUseInterimTilesOnError(options.useInterimTilesOnError !== undefined ? options.useInterimTilesOnError : true);
   }
 
   /**
-  * Return the level as number to which we will preload tiles up to.
-  * @return {number} The level to preload tiles up to.
-  * @observable
-  * @api
-  */
+   * Return the level as number to which we will preload tiles up to.
+   * @return {number} The level to preload tiles up to.
+   * @observable
+   * @api
+   */
   getPreload() {
     return /** @type {number} */ (this.get(TileProperty.PRELOAD));
   }
 
   /**
-  * Set the level as number to which we will preload tiles up to.
-  * @param {number} preload The level to preload tiles up to.
-  * @observable
-  * @api
-  */
+   * Set the level as number to which we will preload tiles up to.
+   * @param {number} preload The level to preload tiles up to.
+   * @observable
+   * @api
+   */
   setPreload(preload) {
     this.set(TileProperty.PRELOAD, preload);
   }
 
   /**
-  * Whether we use interim tiles on error.
-  * @return {boolean} Use interim tiles on error.
-  * @observable
-  * @api
-  */
+   * Whether we use interim tiles on error.
+   * @return {boolean} Use interim tiles on error.
+   * @observable
+   * @api
+   */
   getUseInterimTilesOnError() {
     return /** @type {boolean} */ (this.get(TileProperty.USE_INTERIM_TILES_ON_ERROR));
   }
 
   /**
-  * Set whether we use interim tiles on error.
-  * @param {boolean} useInterimTilesOnError Use interim tiles on error.
-  * @observable
-  * @api
-  */
+   * Set whether we use interim tiles on error.
+   * @param {boolean} useInterimTilesOnError Use interim tiles on error.
+   * @observable
+   * @api
+   */
   setUseInterimTilesOnError(useInterimTilesOnError) {
     this.set(TileProperty.USE_INTERIM_TILES_ON_ERROR, useInterimTilesOnError);
   }
 }
-
 
 export default BaseTileLayer;

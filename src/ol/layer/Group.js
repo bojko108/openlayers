@@ -1,19 +1,18 @@
 /**
  * @module ol/layer/Group
  */
-import {getUid} from '../util.js';
+import { getUid } from '../util.js';
 import Collection from '../Collection.js';
 import CollectionEventType from '../CollectionEventType.js';
-import {getChangeEventType} from '../Object.js';
+import { getChangeEventType } from '../Object.js';
 import ObjectEventType from '../ObjectEventType.js';
-import {assert} from '../asserts.js';
-import {listen, unlistenByKey} from '../events.js';
+import { assert } from '../asserts.js';
+import { listen, unlistenByKey } from '../events.js';
 import EventType from '../events/EventType.js';
-import {getIntersection} from '../extent.js';
+import { getIntersection } from '../extent.js';
 import BaseLayer from './Base.js';
-import {assign, clear} from '../obj.js';
+import { assign, clear } from '../obj.js';
 import SourceState from '../source/State.js';
-
 
 /**
  * @typedef {Object} Options
@@ -30,8 +29,8 @@ import SourceState from '../source/State.js';
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
  * @property {Array<import("./Base.js").default>|import("../Collection.js").default<import("./Base.js").default>} [layers] Child layers.
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
-
 
 /**
  * @enum {string}
@@ -40,7 +39,6 @@ import SourceState from '../source/State.js';
 const Property = {
   LAYERS: 'layers'
 };
-
 
 /**
  * @classdesc
@@ -55,12 +53,15 @@ class LayerGroup extends BaseLayer {
    * @param {Options=} opt_options Layer options.
    */
   constructor(opt_options) {
-
     const options = opt_options || {};
     const baseOptions = /** @type {Options} */ (assign({}, options));
     delete baseOptions.layers;
 
     let layers = options.layers;
+
+    if (baseOptions.metadata) {
+      baseOptions.metadata.type = 'group';
+    }
 
     super(baseOptions);
 
@@ -76,23 +77,19 @@ class LayerGroup extends BaseLayer {
      */
     this.listenerKeys_ = {};
 
-    listen(this,
-      getChangeEventType(Property.LAYERS),
-      this.handleLayersChanged_, this);
+    listen(this, getChangeEventType(Property.LAYERS), this.handleLayersChanged_, this);
 
     if (layers) {
       if (Array.isArray(layers)) {
-        layers = new Collection(layers.slice(), {unique: true});
+        layers = new Collection(layers.slice(), { unique: true });
       } else {
-        assert(typeof /** @type {?} */ (layers).getArray === 'function',
-          43); // Expected `layers` to be an array or a `Collection`
+        assert(typeof /** @type {?} */ (layers).getArray === 'function', 43); // Expected `layers` to be an array or a `Collection`
       }
     } else {
-      layers = new Collection(undefined, {unique: true});
+      layers = new Collection(undefined, { unique: true });
     }
 
     this.setLayers(layers);
-
   }
 
   /**
@@ -166,9 +163,7 @@ class LayerGroup extends BaseLayer {
    * @api
    */
   getLayers() {
-    return (
-      /** @type {!import("../Collection.js").default<import("./Base.js").default>} */ (this.get(Property.LAYERS))
-    );
+    return /** @type {!import("../Collection.js").default<import("./Base.js").default>} */ (this.get(Property.LAYERS));
   }
 
   /**
@@ -211,10 +206,8 @@ class LayerGroup extends BaseLayer {
       const layerState = states[i];
       layerState.opacity *= ownLayerState.opacity;
       layerState.visible = layerState.visible && ownLayerState.visible;
-      layerState.maxResolution = Math.min(
-        layerState.maxResolution, ownLayerState.maxResolution);
-      layerState.minResolution = Math.max(
-        layerState.minResolution, ownLayerState.minResolution);
+      layerState.maxResolution = Math.min(layerState.maxResolution, ownLayerState.maxResolution);
+      layerState.minResolution = Math.max(layerState.minResolution, ownLayerState.minResolution);
       if (ownLayerState.extent !== undefined) {
         if (layerState.extent !== undefined) {
           layerState.extent = getIntersection(layerState.extent, ownLayerState.extent);
@@ -234,6 +227,5 @@ class LayerGroup extends BaseLayer {
     return SourceState.READY;
   }
 }
-
 
 export default LayerGroup;

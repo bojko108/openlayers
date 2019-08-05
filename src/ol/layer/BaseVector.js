@@ -2,9 +2,8 @@
  * @module ol/layer/BaseVector
  */
 import Layer from './Layer.js';
-import {assign} from '../obj.js';
-import {createDefaultStyle, toFunction as toStyleFunction} from '../style/Style.js';
-
+import { assign } from '../obj.js';
+import { createDefaultStyle, toFunction as toStyleFunction } from '../style/Style.js';
 
 /**
  * @typedef {Object} Options
@@ -44,8 +43,8 @@ import {createDefaultStyle, toFunction as toStyleFunction} from '../style/Style.
  * batches will be recreated when no animation is active.
  * @property {boolean} [updateWhileInteracting=false] When set to `true`, feature batches will
  * be recreated during interactions. See also `updateWhileAnimating`.
+ * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
-
 
 /**
  * @enum {string}
@@ -54,7 +53,6 @@ import {createDefaultStyle, toFunction as toStyleFunction} from '../style/Style.
 const Property = {
   RENDER_ORDER: 'renderOrder'
 };
-
 
 /**
  * @classdesc
@@ -80,6 +78,9 @@ class BaseVectorLayer extends Layer {
     delete baseOptions.renderBuffer;
     delete baseOptions.updateWhileAnimating;
     delete baseOptions.updateWhileInteracting;
+
+    baseOptions.metadata.type = 'vector';
+
     super(baseOptions);
 
     /**
@@ -92,8 +93,7 @@ class BaseVectorLayer extends Layer {
      * @type {number}
      * @private
      */
-    this.renderBuffer_ = options.renderBuffer !== undefined ?
-      options.renderBuffer : 100;
+    this.renderBuffer_ = options.renderBuffer !== undefined ? options.renderBuffer : 100;
 
     /**
      * User provided style.
@@ -115,16 +115,13 @@ class BaseVectorLayer extends Layer {
      * @type {boolean}
      * @private
      */
-    this.updateWhileAnimating_ = options.updateWhileAnimating !== undefined ?
-      options.updateWhileAnimating : false;
+    this.updateWhileAnimating_ = options.updateWhileAnimating !== undefined ? options.updateWhileAnimating : false;
 
     /**
      * @type {boolean}
      * @private
      */
-    this.updateWhileInteracting_ = options.updateWhileInteracting !== undefined ?
-      options.updateWhileInteracting : false;
-
+    this.updateWhileInteracting_ = options.updateWhileInteracting !== undefined ? options.updateWhileInteracting : false;
   }
 
   /**
@@ -146,9 +143,7 @@ class BaseVectorLayer extends Layer {
    *     order.
    */
   getRenderOrder() {
-    return (
-    /** @type {import("../render.js").OrderFunction|null|undefined} */ (this.get(Property.RENDER_ORDER))
-    );
+    return /** @type {import("../render.js").OrderFunction|null|undefined} */ (this.get(Property.RENDER_ORDER));
   }
 
   /**
@@ -207,12 +202,9 @@ class BaseVectorLayer extends Layer {
    */
   setStyle(style) {
     this.style_ = style !== undefined ? style : createDefaultStyle;
-    this.styleFunction_ = style === null ?
-      undefined : toStyleFunction(this.style_);
+    this.styleFunction_ = style === null ? undefined : toStyleFunction(this.style_);
     this.changed();
   }
-
 }
-
 
 export default BaseVectorLayer;

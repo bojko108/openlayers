@@ -1,7 +1,7 @@
 {
   "name": "ol",
   "version": "6.0.0-beta.11",
-  "description": "OpenLayers mapping library",
+  "description": "OpenLayers mapping library extended with MapDaemon",
   "keywords": [
     "map",
     "mapping",
@@ -10,10 +10,13 @@
   "private": true,
   "homepage": "https://openlayers.org/",
   "scripts": {
+    "dev": "yarn serve-examples",
+    "build": "yarn build-package",
     "lint": "eslint tasks test rendering src/ol examples config",
     "pretest": "npm run lint",
     "test-rendering": "node rendering/test.js",
     "test": "npm run karma -- --single-run --log-level error && npm run test-rendering -- --force",
+    "mytests": "npm run karma -- --log-level error",
     "karma": "karma start test/karma.config.js",
     "start": "npm run serve-examples",
     "serve-examples": "webpack-dev-server --config examples/webpack/config.js --mode development --watch",
@@ -26,16 +29,20 @@
     "typecheck": "tsc --pretty",
     "apidoc": "jsdoc -R config/jsdoc/api/index.md -c config/jsdoc/api/conf.json -P package.json -d build/apidoc"
   },
-  "main": "index.js",
+  "main": "src/ol/index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/openlayers/openlayers.git"
+    "url": "git://github.com/bojko108/openlayers.git"
   },
   "license": "BSD-2-Clause",
   "bugs": {
-    "url": "https://github.com/openlayers/openlayers/issues"
+    "url": "https://github.com/bojko108/openlayers/issues"
   },
   "dependencies": {
+    "@feathersjs/feathers": "^3.3.1",
+    "@feathersjs/rest-client": "^1.4.7",
+    "axios": "^0.19.0",
+    "ol-esri-style": "bojko108/ol-esri-style",
     "pbf": "3.2.0",
     "pixelworks": "1.1.0",
     "rbush": "^3.0.0"
@@ -83,7 +90,7 @@
     "ol-mapbox-style": "^5.0.0-beta.3",
     "pixelmatch": "^5.0.0",
     "pngjs": "^3.4.0",
-    "proj4": "2.5.0",
+    "proj4": "^2.5.0",
     "puppeteer": "~1.19.0",
     "rollup": "^1.12.0",
     "rollup-plugin-babel": "^4.3.2",

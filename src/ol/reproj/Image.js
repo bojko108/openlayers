@@ -51,7 +51,10 @@ class ReprojImage extends ImageBase {
 
     const sourceExtent = triangulation.calculateSourceExtent();
     const sourceImage = getImageFunction(sourceExtent, sourceResolution, pixelRatio);
-    const state = sourceImage ? ImageState.IDLE : ImageState.EMPTY;
+    let state = ImageState.LOADED;
+    if (sourceImage) {
+      state = ImageState.IDLE;
+    }
     const sourcePixelRatio = sourceImage ? sourceImage.getPixelRatio() : 1;
 
     super(targetExtent, targetResolution, sourcePixelRatio, state);

@@ -6,7 +6,8 @@ const path = require('path');
 
 const src = path.join(__dirname, '..');
 
-const examples = fs.readdirSync(src)
+const examples = fs
+  .readdirSync(src)
   .filter(name => /^(?!index).*\.html$/.test(name))
   .map(name => name.replace(/\.html$/, ''));
 
@@ -21,24 +22,22 @@ module.exports = {
   entry: entry,
   stats: 'minimal',
   module: {
-    rules: [{
-      test: /\.js$/,
-      use: {
-        loader: 'buble-loader'
+    rules: [
+      {
+        test: /\.js$/,
+        use: {
+          loader: 'buble-loader'
+        },
+        include: [path.join(__dirname, '..', '..', 'src'), path.join(__dirname, '..')]
       },
-      include: [
-        path.join(__dirname, '..', '..', 'src'),
-        path.join(__dirname, '..')
-      ]
-    }, {
-      test: /\.js$/,
-      use: {
-        loader: path.join(__dirname, './worker-loader.js')
-      },
-      include: [
-        path.join(__dirname, '../../src/ol/worker')
-      ]
-    }]
+      {
+        test: /\.js$/,
+        use: {
+          loader: path.join(__dirname, './worker-loader.js')
+        },
+        include: [path.join(__dirname, '../../src/ol/worker')]
+      }
+    ]
   },
   optimization: {
     minimizer: [
@@ -63,11 +62,11 @@ module.exports = {
       common: 'common'
     }),
     new CopyPlugin([
-      {from: '../src/ol/ol.css', to: 'css'},
-      {from: 'data', to: 'data'},
-      {from: 'resources', to: 'resources'},
-      {from: 'Jugl.js', to: 'Jugl.js'},
-      {from: 'index.html', to: 'index.html'}
+      { from: '../src/ol/ol.css', to: 'css' },
+      { from: 'data', to: 'data' },
+      { from: 'resources', to: 'resources' },
+      { from: 'Jugl.js', to: 'Jugl.js' },
+      { from: 'index.html', to: 'index.html' }
     ])
   ],
   devtool: 'source-map',

@@ -108,6 +108,12 @@ class MousePosition extends Control {
      */
     this.transform_ = null;
 
+    /**
+     * @private
+     * @type {import("../pixel.js").Pixel}
+     */
+    this.lastMouseMovePixel_ = null;
+
   }
 
   /**
@@ -150,7 +156,8 @@ class MousePosition extends Control {
    */
   handleMouseMove(event) {
     const map = this.getMap();
-    this.updateHTML_(map.getEventPixel(event));
+    this.lastMouseMovePixel_ = map.getEventPixel(event);
+    this.updateHTML_(this.lastMouseMovePixel_);
   }
 
   /**
@@ -159,6 +166,7 @@ class MousePosition extends Control {
    */
   handleMouseOut(event) {
     this.updateHTML_(null);
+    this.lastMouseMovePixel_ = null;
   }
 
   /**
