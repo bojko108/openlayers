@@ -8,13 +8,7 @@ import { assign } from "./obj.js";
 import CompositeMapRenderer from "./renderer/Composite.js";
 
 import { toDegrees, toRadians } from "./math";
-import {
-  METERS_PER_UNIT,
-  get as getProjection,
-  transform,
-  transformExtent,
-  Projection
-} from "./proj.js";
+import { METERS_PER_UNIT, get as getProjection, transform, transformExtent, Projection } from "./proj.js";
 import View from "./View.js";
 import { easeOut } from "./easing.js";
 import { getVectorContext } from "./render.js";
@@ -22,14 +16,7 @@ import { fromExtent } from "./geom/Polygon.js";
 import Feature from "./Feature.js";
 import LayerProperty from "./layer/Property.js";
 
-import {
-  setMap,
-  createOperationalLayer,
-  createFeatureStyle,
-  calculateFeaturesExtent,
-  calculateCenterPointOfExtent,
-  splitAtIndex
-} from "./daemon";
+import { setMap, createOperationalLayer, createFeatureStyle, calculateFeaturesExtent, calculateCenterPointOfExtent, splitAtIndex } from "./daemon";
 import ArcGISDynamicMapServiceLayer from "./layer/ArcGISDynamicMapServiceLayer.js";
 import flashingOptions from "./daemon/helpers/flashingOptions.js";
 
@@ -240,11 +227,7 @@ class Map extends PluggableMap {
     this.setView(
       new View({
         projection: projection,
-        center: transform(
-          oldView.getCenter(),
-          oldView.getProjection(),
-          projection
-        ),
+        center: transform(oldView.getCenter(), oldView.getProjection(), projection),
         zoom: oldView.getZoom(),
         rotation: oldView.getRotation(),
         minResolution: oldView.getMinResolution(),
@@ -445,11 +428,7 @@ class Map extends PluggableMap {
    * @return {import('./extent').Extent}
    */
   getVisibleExtent(destination = "EPSG:4326") {
-    const extent = transformExtent(
-      this.getView().calculateExtent(this.getSize()),
-      this.projection,
-      destination
-    );
+    const extent = transformExtent(this.getView().calculateExtent(this.getSize()), this.projection, destination);
     return extent;
   }
 
@@ -613,12 +592,9 @@ class Map extends PluggableMap {
           frameState = event.frameState,
           elapsed = frameState.time - start,
           elapsedRatio = elapsed / options.duration,
-          newRadius =
-            easeOut(elapsedRatio) * options.radius + options.radius / 2,
+          newRadius = easeOut(elapsedRatio) * options.radius + options.radius / 2,
           opacity = easeOut(1 - elapsedRatio),
-          color = `rgba(${options.red},${options.green},${
-            options.blue
-          },${opacity})`,
+          color = `rgba(${options.red},${options.green},${options.blue},${opacity})`,
           style = createFeatureStyle({
             stroke: {
               color,
@@ -640,9 +616,7 @@ class Map extends PluggableMap {
         } else {
           vectorContext.setStyle(style);
           for (let i = 0; i < flashedFeatures.length; i++) {
-            vectorContext.drawGeometry(
-              flashedFeatures[i].getGeometry().clone()
-            );
+            vectorContext.drawGeometry(flashedFeatures[i].getGeometry().clone());
           }
           this.render();
         }
@@ -674,12 +648,9 @@ class Map extends PluggableMap {
           frameState = event.frameState,
           elapsed = frameState.time - start,
           elapsedRatio = elapsed / options.duration,
-          newRadius =
-            easeOut(elapsedRatio) * options.radius + options.radius / 2,
+          newRadius = easeOut(elapsedRatio) * options.radius + options.radius / 2,
           opacity = easeOut(1 - elapsedRatio),
-          color = `rgba(${options.red},${options.green},${
-            options.blue
-          },${opacity})`,
+          color = `rgba(${options.red},${options.green},${options.blue},${opacity})`,
           style = createFeatureStyle({
             stroke: {
               color,

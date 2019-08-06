@@ -1,35 +1,28 @@
 /**
  * @module ol/Feature
  */
-import { assert } from './asserts.js';
-import { listen, unlisten, unlistenByKey } from './events.js';
-import EventType from './events/EventType.js';
-import BaseObject, { getChangeEventType } from './Object.js';
-import { getVectorContext } from './render.js';
-import { easeOut } from './easing.js';
+import { assert } from "./asserts.js";
+import { listen, unlisten, unlistenByKey } from "./events.js";
+import EventType from "./events/EventType.js";
+import BaseObject, { getChangeEventType } from "./Object.js";
+import { getVectorContext } from "./render.js";
+import { easeOut } from "./easing.js";
 
-import { createFeatureStyle, calculateCenterPointOfExtent } from './daemon';
-import flashingOptions from './daemon/helpers/flashingOptions.js';
+import { createFeatureStyle, calculateCenterPointOfExtent } from "./daemon";
+import flashingOptions from "./daemon/helpers/flashingOptions.js";
 
 /**
- * Feature visibility states. If `undefined|null` the feature will be
- * displayed using the layer style definition.
- * @enum {string}
+ * Indicates feature states - used when styling the feature before drawing it on the map. If `hidden = true`
+ * other states are not checked when styling the feature. A feature can have both `selected` and `highlighted`
+ * turned on at the same time.
+ * @typedef FeatureState
+ * @property {Boolean} [selected] - is the feature in selected state. When in this state the feature
+ * will have an additional select style - {@link defaultSelectStyle}.
+ * @property {Boolean} [highlighted] - is the feature in highlighted state. When in this state the feature
+ * will have an additional highlight style - {@link defaultHighlightStyle}.
+ * @property {Boolean} [hidden] - is the feature in hidden state. When in this state, the feature will
+ * have style = `null` and wont be visible on the map.
  */
-export const FeatureState = Object.freeze({
-  /**
-   * Indicates that the feature should appear selected on the map.
-   */
-  SELECTED: 'selected',
-  /**
-   * Indicates that the feature should appear highlighted on the map.
-   */
-  HIGHLIGHTED: 'highlighted',
-  /**
-   * Indicates that the feature should not be displayed on the map.
-   */
-  HIDDEN: 'hidden'
-});
 
 /**
  * @typedef FeatureAttribute
@@ -122,13 +115,17 @@ class Feature extends BaseObject {
     /**
      * @type {FeatureState}
      */
-    this._state = undefined;
+    this._state = {
+      selected: false,
+      highlighted: false,
+      hidden: false
+    };
 
     /**
      * @type {string}
      * @private
      */
-    this.geometryName_ = 'geometry';
+    this.geometryName_ = "geometry";
 
     /**
      * User provided style.
@@ -152,7 +149,7 @@ class Feature extends BaseObject {
     listen(this, getChangeEventType(this.geometryName_), this.handleGeometryChanged_, this);
 
     if (opt_geometryOrProperties) {
-      if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === 'function') {
+      if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === "function") {
         const geometry = /** @type {Geometry} */ (opt_geometryOrProperties);
         this.setGeometry(geometry);
       } else {
@@ -178,20 +175,48 @@ class Feature extends BaseObject {
   }
 
   /**
-   * Gets the feature state - indicates how the feature should be displayed on the map.
-   * If `undefined|null` the feature will be displayed using the layer style definition.
+   * Indicates feature states - used when styling the feature before drawing it on the map. If `hidden = true`
+   * other states are not checked when styling the feature. A feature can have both `selected` and `highlighted`
+   * turned on at the same time.
    * @type {FeatureState}
    */
   get state() {
     return this._state;
   }
+
   /**
-   * Set how the feature should be displayed on the map. If `undefined|null` the feature will be
-   * displayed using the layer style definition.
-   * @param {FeatureState} value
+   * Select this feature. After calling this function, `state.selected` will be `true`.
+   * @param {!Boolean} selected - is the feature selected or not
    */
-  set state(value) {
-    this._state = value;
+  setSelected(selected) {
+    this._state.selected = selected;
+    this.changed();
+  }
+  /**
+   * Highlight this feature. After calling this function, `state.highlighted` will be `true`.
+   * @param {!Boolean} highlighted - is the feature highlighted or not
+   */
+  setHighlighted(highlighted) {
+    this._state.highlighted = highlighted;
+    this.changed();
+  }
+  /**
+   * Hide this feature. After calling this function, `state.hidden` will be `true`.
+   * @param {!Boolean} hidden - is the feature hidden or not
+   */
+  setHidden(hidden) {
+    this._state.hidden = hidden;
+    this.changed();
+  }
+  /**
+   * Reset feature state. After calling this function, all feature states will be `false`.
+   */
+  resetState() {
+    this._state = {
+      selected: false,
+      highlighted: false,
+      hidden: false
+    };
     this.changed();
   }
 
@@ -372,7 +397,7 @@ class Feature extends BaseObject {
       }));
     } else {
       for (let name in props) {
-        if (name === 'geometry') continue;
+        if (name === "geometry") continue;
         result.push({
           name,
           alias: name,
@@ -418,13 +443,13 @@ class Feature extends BaseObject {
       start = new Date().getTime(),
       flashedFeature = this.clone(),
       startFlashing = () => {
-        layer.on('postrender', animate);
+        layer.on("postrender", animate);
         layer.addFeature(flashedFeature);
         this.layer.map.render();
       },
       stopFlashing = () => {
         layer.removeFeature(flashedFeature);
-        layer.un('postrender', animate);
+        layer.un("postrender", animate);
       },
       animate = event => {
         const vectorContext = getVectorContext(event),
@@ -491,7 +516,7 @@ class Feature extends BaseObject {
  * @return {import("./style/Style.js").StyleFunction} A style function.
  */
 export function createStyleFunction(obj) {
-  if (typeof obj === 'function') {
+  if (typeof obj === "function") {
     return obj;
   } else {
     /**
@@ -501,7 +526,7 @@ export function createStyleFunction(obj) {
     if (Array.isArray(obj)) {
       styles = obj;
     } else {
-      assert(typeof /** @type {?} */ (obj).getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+      assert(typeof /** @type {?} */ (obj).getZIndex === "function", 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
       const style = /** @type {import("./style/Style.js").default} */ (obj);
       styles = [style];
     }
