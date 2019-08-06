@@ -59,7 +59,7 @@ class DragPan extends PointerInteraction {
      * @private
      * @type {import("../events/condition.js").Condition}
      */
-    this.condition_ = options.condition ? options.condition : defaultCondition;
+    this.condition_ = options.condition ? options.condition : noModifierKeys;
 
     /**
      * @private
