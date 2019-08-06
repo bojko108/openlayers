@@ -36,7 +36,7 @@ export default class SelectWidget extends Widget {
      * @type {DragBox}
      * @see http://openlayers.org/en/latest/apidoc/ol.interaction.DragBox.html
      */
-    this._dragBoxInteraction = new DragBox({ onBoxEnd: () => this.__onDragBoxEnd() });
+    this._dragBoxInteraction = new DragBox({ className: 'dm-dragbox', onBoxEnd: () => this.__onDragBoxEnd() });
     this._dragBoxInteraction.setActive(false);
 
     this._hitTolerance = options.hitTolerance || 5;
