@@ -1,24 +1,24 @@
 /**
  * @module ol/Map
  */
-import PluggableMap from "./PluggableMap.js";
-import { defaults as defaultControls } from "./control.js";
-import { defaults as defaultInteractions } from "./interaction.js";
-import { assign } from "./obj.js";
-import CompositeMapRenderer from "./renderer/Composite.js";
+import PluggableMap from './PluggableMap.js';
+import { defaults as defaultControls } from './control.js';
+import { defaults as defaultInteractions } from './interaction.js';
+import { assign } from './obj.js';
+import CompositeMapRenderer from './renderer/Composite.js';
 
-import { toDegrees, toRadians } from "./math";
-import { METERS_PER_UNIT, get as getProjection, transform, transformExtent, Projection } from "./proj.js";
-import View from "./View.js";
-import { easeOut } from "./easing.js";
-import { getVectorContext } from "./render.js";
-import { fromExtent } from "./geom/Polygon.js";
-import Feature from "./Feature.js";
-import LayerProperty from "./layer/Property.js";
+import { toDegrees, toRadians } from './math';
+import { METERS_PER_UNIT, get as getProjection, transform, transformExtent, Projection } from './proj.js';
+import View from './View.js';
+import { easeOut } from './easing.js';
+import { getVectorContext } from './render.js';
+import { fromExtent } from './geom/Polygon.js';
+import Feature from './Feature.js';
+import LayerProperty from './layer/Property.js';
 
-import { setMap, createOperationalLayer, createFeatureStyle, calculateFeaturesExtent, calculateCenterPointOfExtent, splitAtIndex } from "./daemon";
-import ArcGISDynamicMapServiceLayer from "./layer/ArcGISDynamicMapServiceLayer.js";
-import flashingOptions from "./daemon/helpers/flashingOptions.js";
+import { setMap, createOperationalLayer, createFeatureStyle, calculateFeaturesExtent, calculateCenterPointOfExtent, splitAtIndex } from './daemon';
+import ArcGISDynamicMapServiceLayer from './layer/ArcGISDynamicMapServiceLayer.js';
+import flashingOptions from './daemon/helpers/flashingOptions.js';
 
 /**
  * @classdesc
@@ -82,9 +82,13 @@ class Map extends PluggableMap {
 
     super(options);
 
+    /**
+     * @type {import('./layer/Base').default}
+     */
     this._defaultLayer = createOperationalLayer({
-      metadata: { name: "defaultLayer" }
+      metadata: { name: 'defaultLayer' }
     });
+    // @ts-ignore
     this._defaultLayer.setMap(this);
 
     // set map for each layer
@@ -256,28 +260,28 @@ class Map extends PluggableMap {
    * @type {Array.<import('./layer/Base').default>}
    */
   get selectableLayers() {
-    return this.getLayersBy("selectable", true);
+    return this.getLayersBy('selectable', true);
   }
   /**
    * reference to all searchable layers - {@link LayerInfo.searchable}
    * @type {Array.<import('./layer/Base').default>}
    */
   get searchableLayers() {
-    return this.getLayersBy("searchable", true);
+    return this.getLayersBy('searchable', true);
   }
   /**
    * reference to all snappable layers - {@link LayerInfo.snappable}
    * @type {Array.<import('./layer/Base').default>}
    */
   get snappableLayers() {
-    return this.getLayersBy("snappable", true);
+    return this.getLayersBy('snappable', true);
   }
   /**
    * reference to all editable layers - {@link LayerInfo.editable}
    * @type {Array<import('./layer/Base').default>}
    */
   get editableLayers() {
-    return this.getLayersBy("editable", true);
+    return this.getLayersBy('editable', true);
   }
 
   /**
@@ -304,7 +308,7 @@ class Map extends PluggableMap {
       .reverse();
 
     return layers.filter(layer => {
-      return layer.layerInfo.type === "basemap";
+      return layer.layerInfo.type === 'basemap';
     });
   }
   /**
@@ -318,7 +322,7 @@ class Map extends PluggableMap {
       .reverse();
 
     return layers.filter(layer => {
-      return layer.layerInfo.type === "vector";
+      return layer.layerInfo.type === 'vector';
     });
   }
 
@@ -332,7 +336,7 @@ class Map extends PluggableMap {
    * map.getLayer('places')
    */
   getLayer(name) {
-    return this.getLayersBy("name", name)[0];
+    return this.getLayersBy('name', name)[0];
   }
 
   /**
@@ -347,7 +351,7 @@ class Map extends PluggableMap {
   getLayerBy(parameter, value) {
     if (arguments.length === 1) {
       value = parameter;
-      parameter = "name";
+      parameter = 'name';
     }
     return this.getLayersBy(parameter, value)[0];
   }
@@ -375,7 +379,7 @@ class Map extends PluggableMap {
         if (layers[i].layerInfo[parameter] === value) {
           result.push(layers[i]);
         }
-        if (layers[i].layerInfo.type === "group") {
+        if (layers[i].layerInfo.type === 'group') {
           // @ts-ignore
           for (let k = 0; k < layers[i].getLayers().getArray().length; k++) {
             // @ts-ignore
@@ -392,7 +396,7 @@ class Map extends PluggableMap {
         if (layers[i].get(parameter) === value) {
           result.push(layers[i]);
         }
-        if (layers[i].get("type") === "group") {
+        if (layers[i].get('type') === 'group') {
           // @ts-ignore
           for (let k = 0; k < layers[i].getLayers().getArray().length; k++) {
             if (
@@ -418,7 +422,7 @@ class Map extends PluggableMap {
    * @param {import('./proj').ProjectionLike} [destination='EPSG:4326'] - return the result in that projection
    * @return {import('./coordinate').Coordinate}
    */
-  getCenter(destination = "EPSG:4326") {
+  getCenter(destination = 'EPSG:4326') {
     const extent = this.getVisibleExtent(destination);
     return calculateCenterPointOfExtent(extent);
   }
@@ -427,7 +431,7 @@ class Map extends PluggableMap {
    * @param {import('./proj').ProjectionLike} [destination='EPSG:4326'] - project the result in that projection
    * @return {import('./extent').Extent}
    */
-  getVisibleExtent(destination = "EPSG:4326") {
+  getVisibleExtent(destination = 'EPSG:4326') {
     const extent = transformExtent(this.getView().calculateExtent(this.getSize()), this.projection, destination);
     return extent;
   }
@@ -491,7 +495,7 @@ class Map extends PluggableMap {
   async zoomToFID(fids, options = {}) {
     let features = [];
     for (let i = 0; i < fids.length; i++) {
-      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf("."));
+      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf('.'));
       const layer = this.getLayer(layerName);
       // @ts-ignore
       features.push(await layer.getFeatureById(fid[i]));
@@ -530,7 +534,7 @@ class Map extends PluggableMap {
   async panToFID(fids) {
     let features = [];
     for (let i = 0; i < fids.length; i++) {
-      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf("."));
+      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf('.'));
       const layer = this.getLayer(layerName);
       // @ts-ignore
       features.push(await layer.getFeatureById(fid[i]));
@@ -561,7 +565,7 @@ class Map extends PluggableMap {
   async flashFID(fids, options) {
     let features = [];
     for (let i = 0; i < fids.length; i++) {
-      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf("."));
+      const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf('.'));
       const layer = this.getLayer(layerName);
       // @ts-ignore
       features.push(await layer.getFeatureById(fid[i]));
@@ -575,17 +579,18 @@ class Map extends PluggableMap {
    */
   flash(features, options) {
     options = Object.assign({}, flashingOptions, options);
-    const layer = this.defaultLayer,
-      start = new Date().getTime(),
+    const start = new Date().getTime(),
       flashedFeatures = features.map(f => f.clone()),
       startFlashing = () => {
-        layer.on("postrender", animate);
-        layer.addFeatures(flashedFeatures);
+        this.defaultLayer.on('postrender', animate);
+        //@ts-ignore
+        this.defaultLayer.addFeatures(flashedFeatures);
         this.render();
       },
       stopFlashing = () => {
-        layer.removeFeatures(flashedFeatures);
-        layer.un("postrender", animate);
+        //@ts-ignore
+        this.defaultLayer.removeFeatures(flashedFeatures);
+        this.defaultLayer.un('postrender', animate);
       },
       animate = event => {
         const vectorContext = getVectorContext(event),
@@ -631,17 +636,18 @@ class Map extends PluggableMap {
    */
   flashExtent(extent, options = {}) {
     options = Object.assign({}, flashingOptions, options);
-    const layer = this.defaultLayer,
-      start = new Date().getTime(),
+    const start = new Date().getTime(),
       flashedFeature = new Feature({ geometry: fromExtent(extent) }),
       startFlashing = () => {
-        layer.on("postrender", animate);
-        layer.addFeature(flashedFeature);
+        this.defaultLayer.on('postrender', animate);
+        //@ts-ignore
+        this.defaultLayer.addFeature(flashedFeature);
         this.render();
       },
       stopFlashing = () => {
-        layer.removeFeature(flashedFeature);
-        layer.un("postrender", animate);
+        //@ts-ignore
+        this.defaultLayer.removeFeature(flashedFeature);
+        this.defaultLayer.un('postrender', animate);
       },
       animate = event => {
         const vectorContext = getVectorContext(event),
