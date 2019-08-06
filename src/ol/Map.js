@@ -112,7 +112,7 @@ class Map extends PluggableMap {
   }
 
   /**
-   * Get current map center point - in format [y,x], projection is according to {@link Map.projection}.
+   * Get current map center point in format [y,x], projection is according to {@link Map.projection}.
    * To get the center in different projection you can use {@link Map.getCenter}.
    * @type {import('./coordinate').Coordinate}
    * @see http://openlayers.org/en/latest/apidoc/ol.View.html#getCenter

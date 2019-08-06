@@ -1,3 +1,5 @@
+import { defaults as defaultControls, ScaleLine, MousePosition } from '../control.js';
+import { defaults as defaultInteractions } from '../interaction.js';
 import Map from '../Map';
 import View from '../View';
 import { transform } from '../proj.js';
@@ -68,8 +70,22 @@ export const createMap = async mapConfig => {
     layers.push(...config.basemaps.map(options => createBasemapLayer(options)));
     layers.push(...config.layers.map(options => createOperationalLayer(options)));
 
-    const map = new Map({ target: config.target, view, layers });
-    return map;
+    const controls = defaultControls(config.controls);
+
+    if (config.controls.scale) {
+      controls.extend([new ScaleLine()]);
+    }
+    if (config.controls.mousePosition) {
+      controls.extend([new MousePosition()]);
+    }
+
+    return new Map({
+      view,
+      layers,
+      controls,
+      target: config.target,
+      interactions: defaultInteractions(config.interactions)
+    });
   } catch (e) {
     console.log(`Error while creating map. ${e.message}`);
     throw e;
