@@ -346,6 +346,13 @@ export default class LayerInfo {
   }
   /**
    * are features from that layer selectable
+   * @type {Boolean}
+   */
+  get selectable() {
+    return this._selectable;
+  }
+  /**
+   * are features from that layer selectable
    * @param {Boolean} selectable
    */
   set selectable(selectable) {
