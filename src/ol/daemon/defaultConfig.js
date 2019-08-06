@@ -21,8 +21,14 @@
  * @property {Boolean} [controls.scale=true] scale control
  * @property {Boolean} [controls.mousePosition=false] mouse position control
  * @property {Object} [interactions] map interactions
- * @property {Boolean} [interactions.altShiftDragRotate=true] altShiftDragRotate interaction
+ * @property {Boolean} [interactions.altShiftDragRotate] altShiftDragRotate interaction
+ * @property {Boolean} [interactions.doubleClickZoom=true] doubleClickZoom interaction
+ * @property {Boolean} [interactions.dragPan=true] dragPan interaction
  * @property {Boolean} [interactions.pinchRotate] pinchRotate interaction
+ * @property {Boolean} [interactions.pinchZoom=true] pinchZoom interaction
+ * @property {Boolean} [interactions.keyboard=true] keyboard interaction
+ * @property {Boolean} [interactions.mouseWheelZoom=true] mouseWheelZoom interaction
+ * @property {Boolean} [interactions.shiftDragZoom=true] shiftDragZoom interaction
  * @property {Boolean} [controls.scale=true] scale control
  * @property {Array<Object>} [layers=[]] list of layers to be added to the map
  * @property {Array<Object>} [basemaps=[{ metadata: { name: 'osm', provider: 'osm' } }]] list of basemaps to be added to the map
@@ -44,7 +50,13 @@ export const defaultMapConfig = {
   },
   interactions: {
     altShiftDragRotate: true,
-    pinchRotate: false
+    doubleClickZoom: true,
+    dragPan: true,
+    pinchRotate: true,
+    pinchZoom: true,
+    keyboard: true,
+    mouseWheelZoom: true,
+    shiftDragZoom: true
   },
   layers: [],
   basemaps: [{ metadata: { name: 'osm', provider: 'osm' } }]
