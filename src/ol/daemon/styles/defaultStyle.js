@@ -61,8 +61,6 @@ import { createFeatureStyle } from "./index.js";
  * @typedef FeatureStyle
  * @property {Array<import('../filters').FilterType>} [filters]
  * @property {import('../../style/Style').default} style
- * @property {import('../../style/Style').default} [selected] ---------------------------
- * @property {import('../../style/Style').default} [highlighted] ------------------------
  */
 
 /**
