@@ -61,8 +61,6 @@ import { createFeatureStyle } from "./index.js";
  * @typedef FeatureStyle
  * @property {Array<import('../filters').FilterType>} [filters]
  * @property {import('../../style/Style').default} style
- * @property {import('../../style/Style').default} [selected] ---------------------------
- * @property {import('../../style/Style').default} [highlighted] ------------------------
  */
 
 /**
@@ -100,6 +98,7 @@ export const defaultLabelStyle = {
 
 /**
  * When a feature is selected this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%.
  * @type {import('../../style/Style').default}
  */
 export const defaultSelectStyle = createFeatureStyle({
@@ -113,6 +112,7 @@ export const defaultSelectStyle = createFeatureStyle({
 
 /**
  * When a feature is highlighted this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%.
  * @type {import('../../style/Style').default}
  */
 export const defaultHighlightStyle = createFeatureStyle({

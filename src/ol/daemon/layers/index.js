@@ -3,6 +3,7 @@ import TileSource from '../../source/Tile';
 import TileLayer from '../../layer/Tile';
 import VectorLayer from '../../layer/Vector';
 import { EnumLayerType } from './info/LayerInfo';
+import LayerGroup from '../../layer/Group';
 import ArcGISDynamicMapServiceLayer from '../../layer/ArcGISDynamicMapServiceLayer';
 import VectorSource from '../../source/Vector';
 import DaemonVectorLayer from '../../layer/DaemonVectorLayer';
@@ -42,8 +43,10 @@ export const createBasemapSource = options => {
 };
 
 /**
- *
+ * Creates a new basemap layer
+ * 
  * @param {import('../../layer/BaseTile').Options|Object} options
+ * @return {TileLayer}
  */
 export const createBasemapLayer = options => {
   const source = createBasemapSource(options.metadata);
@@ -52,26 +55,27 @@ export const createBasemapLayer = options => {
 };
 
 /**
- *
+ * Creates a new operational layer - vector layer
+ * 
  * @param {import('../../layer/BaseVector').Options|Object} options
+ * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer}
  */
 export const createOperationalLayer = options => {
-  let source;
-
   if (options.metadata) {
     switch (options.metadata.type) {
+      case EnumLayerType.GROUP:
+        options.layers = options.layers.map(layer => createOperationalLayer(layer));
+        return new LayerGroup(options);
       case EnumLayerType.ARCGIS:
         return new ArcGISDynamicMapServiceLayer(options);
       case EnumLayerType.DAEMON:
         return new DaemonVectorLayer(options);
       default:
-        source = new VectorSource(options.source);
-        options.source = source;
+        options.source = new VectorSource(options.source);
         return new VectorLayer(options);
     }
   } else {
-    source = new VectorSource(options.source);
-    options.source = source;
+    options.source = new VectorSource(options.source);
     return new VectorLayer(options);
   }
 };

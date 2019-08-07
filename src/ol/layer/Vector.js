@@ -1,15 +1,15 @@
 /**
  * @module ol/layer/Vector
  */
-import BaseVectorLayer from './BaseVector.js';
-import CanvasVectorLayerRenderer from '../renderer/canvas/VectorLayer.js';
-import { METERS_PER_UNIT } from '../proj.js';
-import LayerProperty from './Property';
-import { Style, Icon, Circle } from '../style.js';
+import BaseVectorLayer from "./BaseVector.js";
+import CanvasVectorLayerRenderer from "../renderer/canvas/VectorLayer.js";
+import { METERS_PER_UNIT } from "../proj.js";
+import LayerProperty from "./Property";
+import { Style, Icon, Circle } from "../style.js";
 
-import { testFeature, createFeatureStyle, createLabelStyle, getFormattedLabel, getMapProjection } from '../daemon';
-import { defaultLabelStyle, defaultFeatureStyle, defaultSelectStyle, defaultHighlightStyle } from '../daemon/styles/defaultStyle.js';
-import { FeatureState } from '../Feature.js';
+import { testFeature, createFeatureStyle, createLabelStyle, getFormattedLabel, getMapProjection } from "../daemon";
+import { defaultLabelStyle, defaultFeatureStyle, defaultSelectStyle, defaultHighlightStyle } from "../daemon/styles/defaultStyle.js";
+import { FeatureState } from "../Feature.js";
 
 /**
  * @classdesc
@@ -196,7 +196,7 @@ class VectorLayer extends BaseVectorLayer {
    * @return {import('../style/Style').default|Array<import('../style/Style').default>}
    */
   __styleFunction(feature, resolution) {
-    if (feature.state === FeatureState.HIDDEN) return null;
+    if (feature.state.hidden) return null;
 
     let styles = [];
 
@@ -206,9 +206,9 @@ class VectorLayer extends BaseVectorLayer {
 
     if (!featureStyle) return null;
 
-    // add an additional style if the feaature is highlighted or selected
-    if (feature.state === FeatureState.SELECTED || feature.state === FeatureState.HIGHLIGHTED) {
-      const additionalStyle = feature.state === FeatureState.SELECTED ? defaultSelectStyle : defaultHighlightStyle;
+    // add an additional style if the feature is selected or highlighted
+    if (feature.state.selected || feature.state.highlighted) {
+      const additionalStyle = feature.state.highlighted ? defaultHighlightStyle : defaultSelectStyle;
 
       if (featureStyle.style.getStroke()) {
         additionalStyle.getStroke().setWidth(featureStyle.style.getStroke().getWidth() * 3);

@@ -32,27 +32,6 @@ export { default as View } from './View.js';
 
 export { getUid, VERSION } from './util.js';
 
-export {
-  backend,
-  getMap,
-  setMap,
-  createMap,
-  createBasemapLayer,
-  createOperationalLayer,
-  addDomain,
-  getDomain,
-  hasDomain,
-  Domain,
-  Field,
-  EnumOperators,
-  testFeature,
-  createFeatureStyle,
-  createLabelStyle,
-  getFormattedLabel,
-  calculateCenterPointOfExtent,
-  calculateFeaturesExtent,
-  format,
-  formatAttributes,
-  formatObject,
-  splitAtIndex
-} from './daemon';
+import * as daemon from './daemon';
+
+export { daemon };

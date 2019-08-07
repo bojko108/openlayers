@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "yarn serve-examples",
     "build": "yarn build-package",
+    "copy": "ncp src ../sos-test-map/node_modules/ol/src",
     "lint": "eslint tasks test rendering src/ol examples config",
     "pretest": "npm run lint",
     "test-rendering": "node rendering/test.js",
@@ -88,6 +89,7 @@
     "loglevelnext": "^3.0.1",
     "marked": "0.7.0",
     "mocha": "6.2.0",
+    "ncp": "^2.0.0",
     "ol-mapbox-style": "^5.0.0-beta.3",
     "pixelmatch": "^5.0.0",
     "pngjs": "^3.4.0",

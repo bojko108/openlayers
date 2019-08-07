@@ -1,10 +1,10 @@
-import defaultOptions from "./defaultOptions";
-import { EnumBasemaps } from "../Basemaps";
-import { METERS_PER_UNIT } from "../../../proj/Units";
-import Field from "../fields/Field";
-import Relationship from "../relationships";
-import { getMapProjection } from "../../app";
-import LayerProperty from "../../../layer/Property.js";
+import defaultOptions from './defaultOptions';
+import { EnumBasemaps } from '../Basemaps';
+import { METERS_PER_UNIT } from '../../../proj/Units';
+import Field from '../fields/Field';
+import Relationship from '../relationships';
+import { getMapProjection } from '../../app';
+import LayerProperty from '../../../layer/Property.js';
 
 /**
  * Available types of vector layers
@@ -14,15 +14,19 @@ export const EnumLayerType = {
   /**
    * Empty vector layer
    */
-  EMPTY: "empty",
+  EMPTY: 'empty',
   /**
    * Layer from ArcGIS Server
    */
-  ARCGIS: "arcgis",
+  ARCGIS: 'arcgis',
   /**
    * Layer conneted to Daemon backend
    */
-  DAEMON: "daemon"
+  DAEMON: 'daemon',
+  /**
+   * Group layer
+   */
+  GROUP: 'group'
 };
 
 export default class LayerInfo {
@@ -30,7 +34,7 @@ export default class LayerInfo {
    * @type {string}
    */
   static get NAME() {
-    return "layerInfo";
+    return 'layerInfo';
   }
 
   /**
@@ -196,18 +200,12 @@ export default class LayerInfo {
      * list of fields
      * @type {Array<Field>}
      */
-    this._fields = layerInfo.fields
-      ? layerInfo.fields.map(field => new Field(field))
-      : [];
+    this._fields = layerInfo.fields ? layerInfo.fields.map(field => new Field(field)) : [];
     /**
      * list of relationships
      * @type {Array<Relationship>}
      */
-    this._relationships = layerInfo.relationships
-      ? layerInfo.relationships.map(
-          relationship => new Relationship(relationship)
-        )
-      : [];
+    this._relationships = layerInfo.relationships ? layerInfo.relationships.map(relationship => new Relationship(relationship)) : [];
 
     // /**
     //  * geometry type for this layer
@@ -345,6 +343,13 @@ export default class LayerInfo {
    */
   set snappable(snappable) {
     this._snappable = snappable;
+  }
+  /**
+   * are features from that layer selectable
+   * @type {Boolean}
+   */
+  get selectable() {
+    return this._selectable;
   }
   /**
    * are features from that layer selectable
@@ -545,9 +550,7 @@ export default class LayerInfo {
   set minScale(scale) {
     this._minScale = scale;
     if (this._layer.map) {
-      this._layer.setMinResolution(
-        this.__getMapResolutionFromScale(this._minScale) || 0
-      );
+      this._layer.setMinResolution(this.__getMapResolutionFromScale(this._minScale) || 0);
     }
   }
   get minScale() {
@@ -556,9 +559,7 @@ export default class LayerInfo {
   set maxScale(scale) {
     this._maxScale = scale;
     if (this._layer.map) {
-      this._layer.setMaxResolution(
-        this.__getMapResolutionFromScale(this._maxScale) || 0
-      );
+      this._layer.setMaxResolution(this.__getMapResolutionFromScale(this._maxScale) || 0);
     }
   }
   get maxScale() {
