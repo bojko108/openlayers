@@ -12,7 +12,7 @@ export const SelectionEventType = {
   /**
    * Emitted when selection is changed
    */
-  SELECTION_CHANGED: 'changed'
+  CHANGED: 'changed'
 };
 
 /**
@@ -46,12 +46,9 @@ export default class SelectWidget extends Widget {
      */
     this._addToSelection = options.addToSelection !== undefined ? options.addToSelection : false;
 
-    this._selected = new Set();
+    this._selected = [];
 
-    this.on(SelectionEventType.SELECTION_CHANGED, ({ selected, deselected }) => {
-      selected.forEach(feature => feature.setSelected(true));
-      deselected.forEach(feature => feature.setSelected(false));
-    });
+    this.on(SelectionEventType.CHANGED, this.__setSelectedState);
   }
 
   /**
@@ -70,11 +67,11 @@ export default class SelectWidget extends Widget {
   }
 
   getSelection() {
-    return [...this._selected];
+    return this._selected;
   }
 
   isSelected(feature) {
-    return this._selected.has(feature);
+    return this._selected.indexOf(feature) > -1;
   }
 
   /**
@@ -91,6 +88,7 @@ export default class SelectWidget extends Widget {
    * Deactivates Select Widget and DragBox interaction
    */
   deactivate() {
+    this.clearSelection();
     this.active = false;
     this._dragBoxInteraction.setActive(false);
   }
@@ -116,78 +114,59 @@ export default class SelectWidget extends Widget {
 
   deselectFeatures(features) {}
 
-  clearSelection() {
-    this.emit(SelectionEventType.SELECTION_CHANGED, { selected: [], deselected: [...this._selected] });
-    this._selected.clear();
+  clearSelection(notify = true) {
+    this.__clearSelectedState(this._selected);
+    this._selected = [];
+    if (notify) {
+      this.emit(SelectionEventType.CHANGED, this._selected);
+    }
+  }
+
+  __setSelectedState(selection) {
+    selection.forEach(feature => feature.setSelected(true));
+  }
+  __clearSelectedState(selection) {
+    selection.forEach(feature => feature.setSelected(false));
   }
 
   __onDragBoxEnd() {
-    let selectionChanged = false;
-    let deselected = [];
     const extent = this._dragBoxInteraction.getGeometry().getExtent();
+    let selectionChanged = false;
 
-    if (!this._addToSelection) {
-      this.clearSelection();
+    if (!this.addToSelection) {
+      this.clearSelection(false);
     }
 
     this.map.selectableLayers.forEach(layer => {
       // @ts-ignore
-      const source = layer.getSource();
-      source.forEachFeatureIntersectingExtent(extent, feature => {
-        // disable this to replace selection
-        if (this._addToSelection) {
-          // @ts-ignore
-          if (this.isSelected(feature) === false) {
-            this._selected.add(feature);
-            selectionChanged = true;
-          }
-        } else {
-          // @ts-ignore
-          if (this.isSelected(feature) === false) {
-            this._selected.add(feature);
-            selectionChanged = true;
-          } else {
-            this._selected.delete(feature);
-            deselected.push(feature);
-            selectionChanged = true;
-          }
+      layer.getSource().forEachFeatureIntersectingExtent(extent, feature => {
+        // @ts-ignore
+        if (this.isSelected(feature) === false) {
+          this._selected.push(feature);
+          selectionChanged = true;
         }
       });
     });
 
     if (selectionChanged) {
-      this.emit(SelectionEventType.SELECTION_CHANGED, { selected: [...this._selected], deselected });
+      this.emit(SelectionEventType.CHANGED, this._selected);
     }
   }
 
   __handleMapEvent(event) {
     let selectionChanged = false;
-    let deselected = [];
 
     if (!this._addToSelection) {
-      this.clearSelection();
+      this.clearSelection(false);
     }
 
     this.map.forEachFeatureAtPixel(
       event.pixel,
       feature => {
-        // disable this to replace selection
-        if (this._addToSelection) {
-          // @ts-ignore
-          if (this.isSelected(feature) === false) {
-            this._selected.add(feature);
-            selectionChanged = true;
-          }
-        } else {
-          // @ts-ignore
-          if (this.isSelected(feature) === false) {
-            this._selected.add(feature);
-            selectionChanged = true;
-          } else {
-            this._selected.delete(feature);
-            deselected.push(feature);
-            selectionChanged = true;
-          }
+        // @ts-ignore
+        if (this.isSelected(feature) === false) {
+          this._selected.push(feature);
+          selectionChanged = true;
         }
       },
       {
@@ -197,7 +176,7 @@ export default class SelectWidget extends Widget {
     );
 
     if (selectionChanged) {
-      this.emit(SelectionEventType.SELECTION_CHANGED, { selected: [...this._selected], deselected });
+      this.emit(SelectionEventType.CHANGED, this._selected);
       event.stopPropagation();
     }
   }
