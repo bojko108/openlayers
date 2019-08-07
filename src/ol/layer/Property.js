@@ -6,6 +6,10 @@
  * @enum {string}
  */
 export default {
+  LAYER_INFO: 'layerInfo',
+  MAP: 'map',
+  STYLES: 'styles',
+  LABELS: 'labels',
   OPACITY: 'opacity',
   VISIBLE: 'visible',
   EXTENT: 'extent',
@@ -13,8 +17,6 @@ export default {
   MAX_RESOLUTION: 'maxResolution',
   MIN_RESOLUTION: 'minResolution',
   SOURCE: 'source',
-  LAYER_INFO: 'layerInfo',
-  MAP: 'map',
-  STYLES: 'styles',
-  LABELS: 'labels'
+  MAX_ZOOM: 'maxZoom',
+  MIN_ZOOM: 'minZoom'
 };

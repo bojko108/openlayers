@@ -28,6 +28,10 @@ import SourceState from '../source/State.js';
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
+ * be visible.
  * @property {Array<import("./Base.js").default>|import("../Collection.js").default<import("./Base.js").default>} [layers] Child layers.
  * @property {import('../daemon/layers/info/defaultOptions').LayerInfoOptions} [metadata] - layer info
  */
@@ -206,8 +210,14 @@ class LayerGroup extends BaseLayer {
       const layerState = states[i];
       layerState.opacity *= ownLayerState.opacity;
       layerState.visible = layerState.visible && ownLayerState.visible;
-      layerState.maxResolution = Math.min(layerState.maxResolution, ownLayerState.maxResolution);
-      layerState.minResolution = Math.max(layerState.minResolution, ownLayerState.minResolution);
+      layerState.maxResolution = Math.min(
+        layerState.maxResolution, ownLayerState.maxResolution);
+      layerState.minResolution = Math.max(
+        layerState.minResolution, ownLayerState.minResolution);
+      layerState.minZoom = Math.max(
+        layerState.minZoom, ownLayerState.minZoom);
+      layerState.maxZoom = Math.min(
+        layerState.maxZoom, ownLayerState.maxZoom);
       if (ownLayerState.extent !== undefined) {
         if (layerState.extent !== undefined) {
           layerState.extent = getIntersection(layerState.extent, ownLayerState.extent);
