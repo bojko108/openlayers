@@ -12,6 +12,7 @@ let widgets = {};
  * @param {Array<import('./Widget').WidgetConfig>} widgetsConfig
  */
 export const createWidgets = widgetsConfig => {
+  widgets = {};
   for (let i = 0; i < widgetsConfig.length; i++) {
     createWidget(widgetsConfig[i]);
   }
