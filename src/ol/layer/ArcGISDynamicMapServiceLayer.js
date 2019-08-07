@@ -25,6 +25,9 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
    * @param {import("./BaseVector.js").Options=} opt_options Options.
    */
   constructor(opt_options) {
+    opt_options.metadata.maxScale = 1;
+    opt_options.metadata.minScale = 1;
+    
     super(opt_options);
 
     /**
