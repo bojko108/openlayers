@@ -87,8 +87,10 @@ export default class SelectWidget extends Widget {
   /**
    * Deactivates Select Widget and DragBox interaction
    */
-  deactivate() {
-    this.clearSelection();
+  deactivate(clearSelection = false) {
+    if (clearSelection) {
+      this.clearSelection();
+    }
     this.active = false;
     this._dragBoxInteraction.setActive(false);
   }
