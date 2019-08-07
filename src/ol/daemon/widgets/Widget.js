@@ -1,9 +1,11 @@
 import MapBrowserEventType from '../../MapBrowserEventType';
 import EventEmitter from '../emitter';
+import { unByKey } from '../../Observable';
 
 export default class Widget extends EventEmitter {
   constructor(options) {
     super();
+    this._listenerKey = undefined;
     this._handler = options.handler;
     this._active = options.active;
     this._mapEventType = options.mapEventType || MapBrowserEventType.SINGLECLICK;
@@ -36,11 +38,7 @@ export default class Widget extends EventEmitter {
    */
   set map(map) {
     this._map = map;
-    this._map.on(this.mapEventType, event => {
-      if (this.active) {
-        this._handler(event);
-      }
-    });
+    this.mapEventType = this._mapEventType;
   }
   /**
    * Get widget's map
@@ -55,7 +53,17 @@ export default class Widget extends EventEmitter {
    * @param {MapBrowserEventType} mapEventType
    */
   set mapEventType(mapEventType) {
+    if (this._listenerKey) {
+      unByKey(this._listenerKey);
+    }
+
     this._mapEventType = mapEventType;
+
+    this._listenerKey = this._map.on(this.mapEventType, event => {
+      if (this.active) {
+        this._handler(event);
+      }
+    });
   }
   /**
    * Get map event type to listen to
