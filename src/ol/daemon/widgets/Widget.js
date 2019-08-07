@@ -6,6 +6,15 @@ import EventEmitter from '../emitter';
 import { unByKey } from '../../Observable';
 
 /**
+ * @typedef WidgetConfig
+ * @property {String} name
+ * @property {Boolean} [active]
+ * @property {import('../../Map').default} [map]
+ * @property {Number} [hitTolerance]
+ * @property {Boolean} [addToSelection]
+ */
+
+/**
  * @classdesc
  * Base Widget class for craeting new map interactions.
  *
