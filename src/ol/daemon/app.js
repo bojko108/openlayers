@@ -47,12 +47,14 @@ export const getMap = () => {
 /**
  * Creates a new Map by specifying layers, controls and more options.
  * @param {import('./defaultConfig').MapConfig} mapConfig
- * @return {Promise<Map>}
+ * @return {Map}
  */
-export const createMap = async mapConfig => {
+export const createMap = (mapConfig, backendUrl) => {
   try {
     initializePredefinedProjections();
-    initializeBackend('http://192.168.1.168:3033');
+    if (backendUrl) {
+      initializeBackend(backendUrl);
+    }
 
     const config = Object.assign({}, defaultMapConfig, mapConfig);
 
@@ -70,6 +72,7 @@ export const createMap = async mapConfig => {
     layers.push(...config.basemaps.map(options => createBasemapLayer(options)));
     layers.push(...config.layers.map(options => createOperationalLayer(options)));
 
+    const interactions = defaultInteractions(config.interactions);
     const controls = defaultControls(config.controls);
 
     if (config.controls.scale) {
@@ -83,8 +86,8 @@ export const createMap = async mapConfig => {
       view,
       layers,
       controls,
-      target: config.target,
-      interactions: defaultInteractions(config.interactions)
+      interactions,
+      target: config.target
     });
   } catch (e) {
     console.log(`Error while creating map. ${e.message}`);

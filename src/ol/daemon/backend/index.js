@@ -10,8 +10,8 @@ let backendApp;
  */
 let restClient;
 
-export const initializeBackend = baseUrl => {
-  restClient = rest(baseUrl);
+export const initializeBackend = backendUrl => {
+  restClient = rest(backendUrl);
 
   backendApp = feathers();
   backendApp.configure(restClient.fetch(window.fetch));
