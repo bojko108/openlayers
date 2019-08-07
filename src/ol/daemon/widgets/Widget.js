@@ -10,8 +10,11 @@ import { unByKey } from '../../Observable';
  * @property {String} name
  * @property {Boolean} [active]
  * @property {import('../../Map').default} [map]
- * @property {Number} [hitTolerance]
- * @property {Boolean} [addToSelection]
+ * @property {String} [mapEventType='singleclick'] according to `MapBrowserEventType`
+ * @property {Number} [hitTolerance] hit-detection tolerance in pixels
+ * @property {Boolean} [addToSelection] if `true` selection will be extended
+ * and not cleared on new features
+ * @property {Function} [handler] - function executed when `options.mapEventType` is triggered
  */
 
 /**
@@ -22,11 +25,7 @@ import { unByKey } from '../../Observable';
  */
 export default class Widget extends EventEmitter {
   /**
-   * @param {Object} options
-   * @param {Boolean} [options.active] is the widget active by default or not
-   * @param {String} [options.mapEventType='singleclick'] according to `MapBrowserEventType`
-   * @param {import('../../Map').default} [options.map]
-   * @param {Function} options.handler - function executed when `options.mapEventType` is triggered
+   * @param {WidgetConfig} options
    */
   constructor(options) {
     super();
