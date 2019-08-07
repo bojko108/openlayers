@@ -28,7 +28,7 @@ export default class SelectWidget extends Widget {
   /**
    * Creates a new Select Widget
    * @param {Object} options
-   * @param {Number} [options.hitTolerance=5] hit-detection tolerance in pixelss
+   * @param {Number} [options.hitTolerance=5] hit-detection tolerance in pixels
    * @param {Boolean} [options.addToSelection=false] if `true` selection will be extended
    * and not cleared on new features
    */
@@ -39,6 +39,7 @@ export default class SelectWidget extends Widget {
     // @ts-ignore
     options.handler = event => this.__handleMapEvent(event);
 
+    // @ts-ignore
     super(options);
 
     /**

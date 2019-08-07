@@ -1,3 +1,4 @@
 import Widget from './Widget';
 import SelectWidget from './Select';
-export { Widget, SelectWidget };
+import HighlightWidget from './Highlight';
+export { Widget, SelectWidget, HighlightWidget };
