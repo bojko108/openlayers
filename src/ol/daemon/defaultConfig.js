@@ -49,10 +49,10 @@ export const defaultMapConfig = {
     mousePosition: false
   },
   interactions: {
-    altShiftDragRotate: true,
+    altShiftDragRotate: false,
     doubleClickZoom: true,
     dragPan: true,
-    pinchRotate: true,
+    pinchRotate: false,
     pinchZoom: true,
     keyboard: true,
     mouseWheelZoom: true,
@@ -63,8 +63,7 @@ export const defaultMapConfig = {
 };
 
 export const defaultAppConfig = {
-  baseUrl: null,
+  backendUrl: null,
   map: defaultMapConfig,
-  widgets: [],
-  controls: []
+  widgets: []
 };
