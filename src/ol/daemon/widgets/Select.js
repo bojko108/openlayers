@@ -17,15 +17,26 @@ export const SelectionEventType = {
 
 /**
  * @classdesc
- * @api
+ * Select widget can be used to select features from the map. The user can
+ * select features by clicking on the map or drawing a box. There are methods
+ * for selecting features programmatically: `selectFeature`, `selectFeatures`,
+ * `deselectFeature`, `deselectFeatures`.
+ *
+ * @extends {Widget}
  */
 export default class SelectWidget extends Widget {
-  // add condition
-
+  /**
+   * Creates a new Select Widget
+   * @param {Object} options
+   * @param {Number} [options.hitTolerance=5] hit-detection tolerance in pixelss
+   * @param {Boolean} [options.addToSelection=false] if `true` selection will be extended
+   * and not cleared on new features
+   */
   constructor(options = {}) {
     /**
      * @param {import('../../MapBrowserEventType')} event
      */
+    // @ts-ignore
     options.handler = event => this.__handleMapEvent(event);
 
     super(options);
@@ -39,15 +50,25 @@ export default class SelectWidget extends Widget {
     this._dragBoxInteraction = new DragBox({ className: 'dm-dragbox', onBoxEnd: () => this.__onDragBoxEnd() });
     this._dragBoxInteraction.setActive(false);
 
+    /**
+     * hit-detection tolerance in pixelss
+     * @type {Number}
+     */
     this._hitTolerance = options.hitTolerance || 5;
 
     /**
+     * if `true` selection will be extended and not cleared on new features
      * @type {Boolean}
      */
     this._addToSelection = options.addToSelection !== undefined ? options.addToSelection : false;
 
+    /**
+     * Array of crrently selected features
+     * @type {Array<import('../../Feature').default|import('../../render/Feature').default>}
+     */
     this._selected = [];
 
+    // this listener sets feature state to `selected`
     this.on(SelectionEventType.CHANGED, this.__setSelectedState);
   }
 
@@ -66,17 +87,29 @@ export default class SelectWidget extends Widget {
     this._addToSelection = value;
   }
 
+  /**
+   * Get currently selected features
+   * @return {Array<import('../../Feature').default|import('../../render/Feature').default>}
+   */
   getSelection() {
     return this._selected;
   }
 
+  /**
+   * Check if a feature is selected or not
+   * @param {import('../../Feature').default|import('../../render/Feature').default} feature
+   * @return {Boolean}
+   */
   isSelected(feature) {
     return this._selected.indexOf(feature) > -1;
   }
 
   /**
-   * Activates Select Widget
-   * @param {Boolean} [addToSelection] - if `true` any selected features will be added to the existing selection array
+   * Activates Select Widget. This method only activates map interactions. You can use
+   * `selectFeature`, `selectFeatures`, `deselectFeature`, `deselectFeatures` to select features
+   * programmatically.
+   * @param {Boolean} [addToSelection] - if `true` any selected features will be added to the
+   * existing selection array
    */
   activate(addToSelection = false) {
     this.addToSelection = addToSelection;
@@ -85,7 +118,10 @@ export default class SelectWidget extends Widget {
   }
 
   /**
-   * Deactivates Select Widget and DragBox interaction
+   * Deactivates Select Widget and DragBox interaction. This method only deactivates map interactions.
+   * You can use `selectFeature`, `selectFeatures`, `deselectFeature`, `deselectFeatures` to select
+   * features programmatically.
+   * @param {Boolean} [clearSelection=false] clear the existing selection or not
    */
   deactivate(clearSelection = false) {
     if (clearSelection) {
@@ -104,10 +140,18 @@ export default class SelectWidget extends Widget {
     this.map.addInteraction(this._dragBoxInteraction);
   }
 
+  /**
+   * Select a single feature
+   * @param {import('../../Feature').default|import('../../render/Feature').default} feature
+   */
   selectFeature(feature) {
     this.selectFeatures([feature]);
   }
 
+  /**
+   * Select an array of features
+   * @param {Array<import('../../Feature').default|import('../../render/Feature').default>} features
+   */
   selectFeatures(features) {
     if (!this._addToSelection) {
       this.clearSelection(false);
@@ -127,10 +171,18 @@ export default class SelectWidget extends Widget {
     }
   }
 
+  /**
+   * Remove a single feature from current selection
+   * @param {import('../../Feature').default|import('../../render/Feature').default} feature
+   */
   deselectFeature(feature) {
     this.deselectFeatures([feature]);
   }
 
+  /**
+   * Remove an array of features from current selection
+   * @param {Array<import('../../Feature').default|import('../../render/Feature').default>} features
+   */
   deselectFeatures(features) {
     let deselected = [];
 
@@ -149,6 +201,10 @@ export default class SelectWidget extends Widget {
     }
   }
 
+  /**
+   * Clear the current map selection.
+   * @param {Boolean} [notify=true] emit selection changed event or not
+   */
   clearSelection(notify = true) {
     this.__clearSelectedState(this._selected);
     this._selected = [];
@@ -157,13 +213,30 @@ export default class SelectWidget extends Widget {
     }
   }
 
+  /**
+   * Set selected state for an array of features
+   * @private
+   * @param {Array<import('../../Feature').default|import('../../render/Feature').default>} selection
+   */
   __setSelectedState(selection) {
+    // @ts-ignore
     selection.forEach(feature => feature.setSelected(true));
   }
+
+  /**
+   * Clear selected state for an array of features
+   * @private
+   * @param {Array<import('../../Feature').default|import('../../render/Feature').default>} selection
+   */
   __clearSelectedState(selection) {
+    // @ts-ignore
     selection.forEach(feature => feature.setSelected(false));
   }
 
+  /**
+   * This method is called when the user finish drawing a selection box
+   * @private
+   */
   __onDragBoxEnd() {
     const extent = this._dragBoxInteraction.getGeometry().getExtent();
 
@@ -188,6 +261,11 @@ export default class SelectWidget extends Widget {
     }
   }
 
+  /**
+   * This method is called when the user clicks on the map
+   * @private
+   * @param {import('../../MapBrowserEvent').default} event
+   */
   __handleMapEvent(event) {
     if (!this._addToSelection) {
       this.clearSelection(false);
