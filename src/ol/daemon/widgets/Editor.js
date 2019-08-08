@@ -67,7 +67,7 @@ export default class EditorWidget extends Widget {
     /**
      * reference to current edit operations
      * @private
-     * @type {Array<Array<Edit>}
+     * @type {Array<Array<Edit>>}
      */
     this._currentEdits = [];
     /**

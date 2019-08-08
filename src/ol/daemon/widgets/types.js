@@ -12,6 +12,10 @@ export const EnumWidgets = {
    */
   SELECT: 'select',
   /**
+   * Measure widget
+   */
+  MEASURE: 'measure',
+  /**
    * Highight widget
    */
   BOOKMARKS: 'bookmarks',

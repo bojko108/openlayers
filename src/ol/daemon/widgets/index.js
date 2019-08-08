@@ -5,6 +5,7 @@ import SelectWidget from './Select';
 import BookmarksWidget from './Bookmarks';
 import HighlightWidget from './Highlight';
 import EditorWidget from './Editor';
+import MeasureWidget from './Measure';
 
 export { Widget, SelectWidget, HighlightWidget };
 
@@ -56,6 +57,8 @@ const widgetsFactory = widgetConfig => {
       return new EditorWidget(widgetConfig);
     case EnumWidgets.SELECT:
       return new SelectWidget(widgetConfig);
+    case EnumWidgets.MEASURE:
+      return new MeasureWidget(widgetConfig);
     case EnumWidgets.BOOKMARKS:
       return new BookmarksWidget(widgetConfig);
     case EnumWidgets.HIGHLIGHT:
