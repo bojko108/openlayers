@@ -1,7 +1,8 @@
 import Widget from './Widget';
-import SelectWidget from './Select';
-import HighlightWidget from './Highlight';
 import { EnumWidgets } from './types';
+import SelectWidget from './Select';
+import BookmarksWidget from './Bookmarks';
+import HighlightWidget from './Highlight';
 
 export { Widget, SelectWidget, HighlightWidget };
 
@@ -51,6 +52,8 @@ const widgetsFactory = widgetConfig => {
   switch (widgetConfig.name) {
     case EnumWidgets.SELECT:
       return new SelectWidget(widgetConfig);
+    case EnumWidgets.BOOKMARKS:
+      return new BookmarksWidget(widgetConfig);
     case EnumWidgets.HIGHLIGHT:
       return new HighlightWidget(widgetConfig);
   }

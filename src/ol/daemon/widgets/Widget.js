@@ -10,7 +10,7 @@ import { unByKey } from '../../Observable';
  * @property {String} name
  * @property {Boolean} [active]
  * @property {import('../../Map').default} [map]
- * @property {String} [mapEventType='singleclick'] according to `MapBrowserEventType`
+ * @property {String} [mapEventType='singleclick'] according to `MapBrowserEventType` or `MapEventType`
  * @property {Number} [hitTolerance] hit-detection tolerance in pixels
  * @property {Boolean} [addToSelection] if `true` selection will be extended
  * and not cleared on new features

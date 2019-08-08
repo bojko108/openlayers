@@ -10,5 +10,9 @@ export const EnumWidgets = {
   /**
    * Highight widget
    */
+  BOOKMARKS: 'bookmarks',
+  /**
+   * Highight widget
+   */
   HIGHLIGHT: 'highlight'
 };
