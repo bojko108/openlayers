@@ -13,7 +13,7 @@ export default class Edits {
     /**
      * list of edits
      * @private
-     * @type {Array<Array<Edit>>}
+     * @type {Array<Edit>}
      */
     this._edits = [];
     /**
@@ -35,7 +35,7 @@ export default class Edits {
   }
   /**
    * Get all edits. Does not stop at current undo/redo index ({@link Edits.editIndex})!
-   * @type {Array<Array<Edit>>}
+   * @type {Array<Edit>}
    */
   get edits() {
     return this._edits;
@@ -74,41 +74,23 @@ export default class Edits {
 
   /**
    * add new edit operation to the list - {@link Edits._edits}
-   * @param {Edit|Array<Edit>} edit - new edit operation
+   * @param {Edit} edit - new edit operation
    */
   add(edit) {
     this._editIndex++;
 
-    /**
-     * @type {Array<Edit>}
-     */
-    const newEdit = Array.isArray(edit) ? edit : [edit];
-
     // // insert a new edit in edits array: when the user undo some edits
     // // and then make new ones
-    this._edits.splice(this._editIndex, 0, newEdit);
+    this._edits.splice(this._editIndex, 0, edit);
 
     // trim all edits after this one: when the user undo some edits
     // and then make new ones
     this._edits.length = this._editIndex + 1;
   }
-  /**
-   * undo the edit operation with index `editIndex`
-   * @return {Array<Edit>|undefined}
-   */
-  undo() {
-    let edit = undefined;
 
-    if (this.canUndo) {
-      edit = this._edits[this._editIndex];
-      this._editIndex--;
-    }
-
-    return edit;
-  }
   /**
    * redo the edit operation with index {@link Edits.editIndex}
-   * @return {Array<Edit>|undefined}
+   * @return {Edit|undefined}
    */
   redo() {
     let edit = undefined;
