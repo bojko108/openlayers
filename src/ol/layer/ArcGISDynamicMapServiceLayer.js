@@ -27,7 +27,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
   constructor(opt_options) {
     opt_options.metadata.maxScale = 1;
     opt_options.metadata.minScale = 1;
-    
+
     super(opt_options);
 
     /**
@@ -185,6 +185,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
           this.layerInfo.sourceCRS = `EPSG:${layerResponce.sourceSpatialReference.wkid}`;
         }
 
+        this.layerInfo.geometryType = layerResponce.geometryType;
         this.layerInfo.visible = layerResponce.defaultVisibility;
         this.layerInfo.minScale = layerResponce.maxScale === 0 ? -Infinity : layerResponce.maxScale;
         this.layerInfo.maxScale = layerResponce.minScale === 0 ? Infinity : layerResponce.minScale;
