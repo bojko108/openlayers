@@ -51,7 +51,7 @@ export default class LayerInfo {
      * @private
      * @type {Number}
      */
-    this._fid = -1;
+    this._fid = 0;
 
     /**
      * @type {import("../../../layer/Base").default}
