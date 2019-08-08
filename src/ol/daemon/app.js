@@ -5,9 +5,10 @@ import View from '../View';
 import { transform } from '../proj.js';
 
 import { initializeBackend } from './backend';
-import { defaultMapConfig } from './defaultConfig.js';
+import { defaultAppConfig, defaultMapConfig } from './defaultConfig.js';
 import { initializePredefinedProjections } from './projections';
 import { createBasemapLayer, createOperationalLayer } from './layers';
+import { createWidgets } from './widgets/index.js';
 
 /**
  * @type {Map}
@@ -91,6 +92,28 @@ export const createMap = (mapConfig, backendUrl) => {
     });
   } catch (e) {
     console.log(`Error while creating map. ${e.message}`);
+    throw e;
+  }
+};
+
+/**
+ * Creates a new app.
+ * @param {import('./defaultConfig').AppConfig} appConfig
+ * @return {Object}
+ */
+export const createApp = appConfig => {
+  try {
+    const config = Object.assign({}, defaultAppConfig, appConfig);
+    const map = createMap(config.map, config.backendUrl);
+    createWidgets(
+      config.widgets.map(w => {
+        w.map = map;
+        return w;
+      })
+    );
+    return { map };
+  } catch (e) {
+    console.log(`Error while creating app. ${e.message}`);
     throw e;
   }
 };

@@ -13,9 +13,9 @@ import MapBrowserEventType from '../../MapBrowserEventType';
 export default class HighlightWidget extends Widget {
   /**
    * Creates a new Highlight Widget
-   * @param {Object} options
+   * @param {import('./Widget').WidgetConfig} options
    */
-  constructor(options = {}) {
+  constructor(options) {
     /**
      * @param {import('../../MapBrowserEventType')} event
      */

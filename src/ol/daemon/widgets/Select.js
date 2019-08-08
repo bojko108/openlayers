@@ -27,12 +27,9 @@ export const SelectionEventType = {
 export default class SelectWidget extends Widget {
   /**
    * Creates a new Select Widget
-   * @param {Object} options
-   * @param {Number} [options.hitTolerance=5] hit-detection tolerance in pixels
-   * @param {Boolean} [options.addToSelection=false] if `true` selection will be extended
-   * and not cleared on new features
+   * @param {import('./Widget').WidgetConfig} options
    */
-  constructor(options = {}) {
+  constructor(options) {
     /**
      * @param {import('../../MapBrowserEventType')} event
      */
@@ -71,6 +68,14 @@ export default class SelectWidget extends Widget {
 
     // this listener sets feature state to `selected`
     this.on(SelectionEventType.CHANGED, this.__setSelectedState);
+
+    if (this.map) {
+      this.map.addInteraction(this._dragBoxInteraction);
+    }
+
+    if (this.active) {
+      this.activate(this._addToSelection);
+    }
   }
 
   /**
