@@ -1,4 +1,4 @@
-import { createFeatureStyle } from "./index.js";
+import { createFeatureStyle } from './index.js';
 
 /**
  * @typedef StyleType
@@ -67,16 +67,16 @@ import { createFeatureStyle } from "./index.js";
  * @type {StyleType}
  */
 export const defaultFeatureStyle = {
-  title: "All features",
+  title: 'All features',
   filters: [],
   icon: null,
   font: null,
-  fill: { color: "rgba(192,192,192,0.5)" },
-  stroke: { color: "#808080", width: 3 },
+  fill: { color: 'rgba(192,192,192,0.5)' },
+  stroke: { color: '#808080', width: 3 },
   circle: {
     radius: 5,
-    fill: { color: "#1589FF" },
-    stroke: { color: "#2B3856", width: 2 }
+    fill: { color: '#1589FF' },
+    stroke: { color: '#2B3856', width: 2 }
   }
 };
 
@@ -86,11 +86,11 @@ export const defaultFeatureStyle = {
 export const defaultLabelStyle = {
   maxScale: 1000,
   minScale: 1,
-  text: "$id",
-  font: "10px sans-serif",
-  textAlign: "end",
-  textBaseline: "bottom",
-  fill: { color: "#000" },
+  text: '$id',
+  font: '10px sans-serif',
+  textAlign: 'end',
+  textBaseline: 'bottom',
+  fill: { color: '#000' },
   rotation: 0,
   offsetX: 5,
   offsetY: -5
@@ -101,25 +101,62 @@ export const defaultLabelStyle = {
  * Circle radius and stroke width are increased by 50%.
  * @type {import('../../style/Style').default}
  */
-export const defaultSelectStyle = createFeatureStyle({
-  fill: { color: "rgba(0,116,217,0.5)" },
-  stroke: { color: "#0074d9", width: 1 },
-  circle: {
-    radius: 1,
-    fill: { color: "#0074d9" }
-  }
-});
-
+let defaultSelectStyle;
 /**
  * When a feature is highlighted this style is added to feature styles.
  * Circle radius and stroke width are increased by 50%.
  * @type {import('../../style/Style').default}
  */
-export const defaultHighlightStyle = createFeatureStyle({
-  fill: { color: "rgba(255,220,0,0.5)" },
-  stroke: { color: "#FFDC00", width: 1 },
-  circle: {
-    radius: 1,
-    fill: { color: "#FFDC00" }
-  }
-});
+let defaultHighlightStyle;
+
+/**
+ * When a feature is selected this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%. Use `getDefaultSelectStyle()` 
+ * to get a reference to this style.
+ */
+export const createDefaultSelectStyle = () => {
+  defaultSelectStyle = createFeatureStyle({
+    fill: { color: 'rgba(0,116,217,0.5)' },
+    stroke: { color: '#0074d9', width: 1 },
+    circle: {
+      radius: 1,
+      fill: { color: '#0074d9' }
+    }
+  });
+};
+
+/**
+ * When a feature is highlighted this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%. Use `getDefaultHighlightStyle()` 
+ * to get a reference to this style.
+ */
+export const createDefaultHighlightStyle = () => {
+  defaultHighlightStyle = createFeatureStyle({
+    fill: { color: 'rgba(255,220,0,0.5)' },
+    stroke: { color: '#FFDC00', width: 1 },
+    circle: {
+      radius: 1,
+      fill: { color: '#FFDC00' }
+    }
+  });
+};
+
+/**
+ * When a feature is selected this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%. Use `createDefaultSelectStyle()` 
+ * before creating the map to initialize this style.
+ * @return {import('../../style/Style').default}
+ */
+export const getDefaultSelectStyle = () => {
+  return defaultSelectStyle;
+};
+
+/**
+ * When a feature is highlighted this style is added to feature styles.
+ * Circle radius and stroke width are increased by 50%. Use `createDefaultHighlightStyle()` 
+ * before creating the map to initialize this style.
+ * @return {import('../../style/Style').default}
+ */
+export const getDefaultHighlightStyle = () => {
+  return defaultHighlightStyle;
+};

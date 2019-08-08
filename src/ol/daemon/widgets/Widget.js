@@ -1,7 +1,6 @@
 /**
  * @module ol/daemon/widgets/Widget
  */
-import MapBrowserEventType from '../../MapBrowserEventType';
 import EventEmitter from '../emitter';
 import { unByKey } from '../../Observable';
 
@@ -10,7 +9,7 @@ import { unByKey } from '../../Observable';
  * @property {String} name
  * @property {Boolean} [active]
  * @property {import('../../Map').default} [map]
- * @property {String} [mapEventType='singleclick'] according to `MapBrowserEventType`
+ * @property {String} [mapEventType] according to `MapBrowserEventType` or `MapEventType`
  * @property {Number} [hitTolerance] hit-detection tolerance in pixels
  * @property {Boolean} [addToSelection] if `true` selection will be extended
  * and not cleared on new features
@@ -49,7 +48,7 @@ export default class Widget extends EventEmitter {
      * @private
      * @type {String}
      */
-    this._mapEventType = options.mapEventType || MapBrowserEventType.SINGLECLICK;
+    this._mapEventType = options.mapEventType;
     /**
      * @private
      * @type {import('../../Map').default}
@@ -83,7 +82,9 @@ export default class Widget extends EventEmitter {
    */
   set map(map) {
     this._map = map;
-    this.mapEventType = this._mapEventType;
+    if (this._mapEventType) {
+      this.mapEventType = this._mapEventType;
+    }
   }
   /**
    * Get widget's map
@@ -95,7 +96,7 @@ export default class Widget extends EventEmitter {
 
   /**
    * Set map event type to listen to
-   * @param {String} mapEventType - according to `MapBrowserEventType`
+   * @param {String} mapEventType - according to `MapBrowserEventType` or `MapEventType`
    */
   set mapEventType(mapEventType) {
     if (this._listenerKey) {
@@ -112,7 +113,7 @@ export default class Widget extends EventEmitter {
   }
   /**
    * Get map event type to listen to
-   * @return {String} according to `MapBrowserEventType`
+   * @return {String} according to `MapBrowserEventType` or `MapEventType`
    */
   get mapEventType() {
     return this._mapEventType;

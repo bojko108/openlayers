@@ -3,8 +3,9 @@ import { EnumBasemaps } from '../Basemaps';
 import { METERS_PER_UNIT } from '../../../proj/Units';
 import Field from '../fields/Field';
 import Relationship from '../relationships';
-import { getMapProjection } from '../../app';
+import { getMapProjection } from '../../map';
 import LayerProperty from '../../../layer/Property.js';
+import { EnumGeometryType } from '../../widgets/Editor';
 
 /**
  * Available types of vector layers
@@ -44,6 +45,13 @@ export default class LayerInfo {
    */
   constructor(layer, metadata = {}) {
     const layerInfo = Object.assign({}, defaultOptions, metadata);
+
+    /**
+     * FID index. All newly created features will have this FID set. Starts from -1 and goes to -Infinity
+     * @private
+     * @type {Number}
+     */
+    this._fid = 0;
 
     /**
      * @type {import("../../../layer/Base").default}
@@ -207,12 +215,11 @@ export default class LayerInfo {
      */
     this._relationships = layerInfo.relationships ? layerInfo.relationships.map(relationship => new Relationship(relationship)) : [];
 
-    // /**
-    //  * geometry type for this layer
-    //  * @private
-    //  * @type {enumGeometryType}
-    //  */
-    // this._geometryType = layerInfo.geometryType || enumGeometryType.olPoint;
+    /**
+     * geometry type for this layer
+     * @type {String}
+     */
+    this._geometryType = layerInfo.geometryType || EnumGeometryType.POINT;
   }
 
   /**
@@ -529,6 +536,45 @@ export default class LayerInfo {
     this._relationships = relationships;
   }
 
+  /**
+   * set geometry type for this layer
+   * @param {String} geometryType - according to `EnumGeometryType`
+   */
+  set geometryType(geometryType) {
+    /**
+     * @type {String}
+     */
+    let internalType;
+
+    switch (geometryType) {
+      case EnumGeometryType.POLYGON:
+      case EnumGeometryType.esriGeometryEnvelope:
+      case EnumGeometryType.esriGeometryPolygon:
+        internalType = EnumGeometryType.POLYGON;
+        break;
+      case EnumGeometryType.POINT:
+      case EnumGeometryType.esriGeometryMultipoint:
+      case EnumGeometryType.esriGeometryPoint:
+        internalType = EnumGeometryType.POINT;
+        break;
+      case EnumGeometryType.LINESTRING:
+      case EnumGeometryType.esriGeometryPolyline:
+        internalType = EnumGeometryType.LINESTRING;
+        break;
+      default:
+        internalType = EnumGeometryType.POINT;
+        break;
+    }
+
+    this._geometryType = internalType;
+  }
+  /**
+   * get geometry type for this layer
+   * @return {String} according to `EnumGeometryType`
+   */
+  get geometryType() {
+    return this._geometryType;
+  }
   set opacity(opacity) {
     this._layer.setOpacity(opacity);
   }
@@ -567,13 +613,26 @@ export default class LayerInfo {
   }
 
   /**
-   * Create an oid value: '[layerInfo.name].[feature.getId()]'
-   * @param {import('../../../Feature').default} feature
+   * Creates an oid value: '[layerInfo.name].[fid]'. If feature is undefined,
+   * `this._fid` is used. Starts from -1 and goes to -Infinity.
+   * @param {import('../../../Feature').default} [feature]
    * @return {String}
    */
   createObjectId(feature) {
-    const id = feature.get(this.objectIdField);
+    const id = feature ? feature.get(this.objectIdField) || --this._fid : --this._fid;
     return `${this.name}.${id}`;
+  }
+
+  /**
+   * Creates default properties for a feature. Uses `fields` array to determine
+   * the values.
+   * @param {import('../../../Feature').default} feature
+   */
+  createDefaultProperties(feature) {
+    for (let i = 0; i < this.fields.length; i++) {
+      const { name, defaultValue } = this.fields[i];
+      feature.set(name, defaultValue);
+    }
   }
 
   /**

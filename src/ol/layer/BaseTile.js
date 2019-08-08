@@ -54,8 +54,10 @@ class BaseTileLayer extends Layer {
     delete baseOptions.preload;
     delete baseOptions.useInterimTilesOnError;
 
-    baseOptions.metadata.type = 'basemap';
-
+    if (baseOptions.metadata) {
+      baseOptions.metadata.type = 'basemap';
+    }
+    
     super(baseOptions);
 
     this.setPreload(options.preload !== undefined ? options.preload : 0);

@@ -138,6 +138,7 @@ export const testFeature = (feature, filters) => {
         case EnumOperators.GREATER_THAN_OR_EQUAL:
           return Number(currentValue) >= Number(validValue);
         case EnumOperators.IN:
+          if (!currentValue) return false;
           const valuesIn = validValue.split(',').map(value => value.toString());
           return valuesIn.indexOf(currentValue.toString()) > -1;
         case EnumOperators.LESS_THAN:
@@ -145,13 +146,16 @@ export const testFeature = (feature, filters) => {
         case EnumOperators.LESS_THAN_OR_EQUAL:
           return Number(currentValue) <= Number(validValue);
         case EnumOperators.LIKE:
+          if (!currentValue) return false;
           return currentValue ? currentValue.toString() === validValue.toString() : false;
         case EnumOperators.NOT_EQUAL:
           return Number(currentValue) !== Number(validValue);
         case EnumOperators.NOT_IN:
+          if (!currentValue) return false;
           const valuesNotIn = validValue.split(',').map(value => value.toString());
           return valuesNotIn.indexOf(currentValue.toString()) === -1;
         case EnumOperators.NOT_LIKE:
+          if (!currentValue) return false;
           return currentValue ? currentValue.toString() !== validValue.toString() : false;
       }
     });

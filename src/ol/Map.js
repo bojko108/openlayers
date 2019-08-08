@@ -16,7 +16,12 @@ import { fromExtent } from './geom/Polygon.js';
 import Feature from './Feature.js';
 import LayerProperty from './layer/Property.js';
 
-import { setMap, createOperationalLayer, createFeatureStyle, calculateFeaturesExtent, calculateCenterPointOfExtent, splitAtIndex } from './daemon';
+import { setMap } from './daemon/map.js';
+import { createOperationalLayer } from './daemon/layers';
+import { createFeatureStyle } from './daemon/styles';
+import { calculateFeaturesExtent, calculateCenterPointOfExtent } from './daemon/helpers/math.js';
+import { splitAtIndex } from './daemon/helpers/strings.js';
+
 import ArcGISDynamicMapServiceLayer from './layer/ArcGISDynamicMapServiceLayer.js';
 import flashingOptions from './daemon/helpers/flashingOptions.js';
 
@@ -257,28 +262,28 @@ class Map extends PluggableMap {
 
   /**
    * get all selectable layers - {@link LayerInfo.selectable}
-   * @type {Array.<import('./layer/Base').default>}
+   * @type {Array.<import('./layer/Vector').default|import('./layer/Layer').default>}
    */
   get selectableLayers() {
     return this.getLayersBy('selectable', true);
   }
   /**
    * reference to all searchable layers - {@link LayerInfo.searchable}
-   * @type {Array.<import('./layer/Base').default>}
+   * @type {Array.<import('./layer/Vector').default|import('./layer/Layer').default>}
    */
   get searchableLayers() {
     return this.getLayersBy('searchable', true);
   }
   /**
    * reference to all snappable layers - {@link LayerInfo.snappable}
-   * @type {Array.<import('./layer/Base').default>}
+   * @type {Array.<import('./layer/Vector').default|import('./layer/Layer').default>}
    */
   get snappableLayers() {
     return this.getLayersBy('snappable', true);
   }
   /**
    * reference to all editable layers - {@link LayerInfo.editable}
-   * @type {Array<import('./layer/Base').default>}
+   * @type {Array<import('./layer/Vector').default|import('./layer/Layer').default>}
    */
   get editableLayers() {
     return this.getLayersBy('editable', true);
@@ -330,7 +335,7 @@ class Map extends PluggableMap {
    * Get layer by name.
    *
    * @param {!String} name - layer name
-   * @return {import('./layer/Base').default}
+   * @return {import('./layer/Layer').default}
    * @example
    * // get layer with name = 'places'
    * map.getLayer('places')
@@ -343,7 +348,7 @@ class Map extends PluggableMap {
    * Get layer by property value
    * @param {!String} parameter - layer property name
    * @param {!any} value - value to search for
-   * @return {import('./layer/Base').default}
+   * @return {import('./layer/Layer').default}
    * @example
    * // get layer with title = 'Some title'
    * map.getLayerBy('title', 'Some title')
@@ -359,7 +364,7 @@ class Map extends PluggableMap {
    * Get layers by property value
    * @param {!String} parameter - layer property name
    * @param {!any} value - value to search for
-   * @return {Array<import('./layer/Base').default>}
+   * @return {Array<import('./layer/Layer').default>}
    * @example
    * // get all editable layers
    * map.getLayersBy('editable', true).forEach(editableLayer => {

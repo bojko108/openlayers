@@ -3,6 +3,7 @@
  */
 import DragBox from '../../interaction/DragBox';
 import Widget from './Widget';
+import MapBrowserEventType from '../../MapBrowserEventType';
 
 /**
  * Constants for selection event types.
@@ -35,6 +36,7 @@ export default class SelectWidget extends Widget {
      */
     // @ts-ignore
     options.handler = event => this.__handleMapEvent(event);
+    options.mapEventType = options.mapEventType || MapBrowserEventType.SINGLECLICK;
 
     // @ts-ignore
     super(options);

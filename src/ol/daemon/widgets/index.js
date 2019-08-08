@@ -1,7 +1,11 @@
 import Widget from './Widget';
-import SelectWidget from './Select';
-import HighlightWidget from './Highlight';
 import { EnumWidgets } from './types';
+
+import SelectWidget from './Select';
+import BookmarksWidget from './Bookmarks';
+import HighlightWidget from './Highlight';
+import EditorWidget from './Editor';
+import MeasureWidget from './Measure';
 
 export { Widget, SelectWidget, HighlightWidget };
 
@@ -14,7 +18,7 @@ let widgets = {};
 export const createWidgets = widgetsConfig => {
   widgets = {};
   for (let i = 0; i < widgetsConfig.length; i++) {
-    createWidget(widgetsConfig[i]);
+    add(widgetsConfig[i]);
   }
 };
 
@@ -23,7 +27,7 @@ export const createWidgets = widgetsConfig => {
  * @param {EnumWidgets} name
  * @return {Widget|undefined}
  */
-export const getWidget = name => {
+export const get = name => {
   return widgets[name];
 };
 
@@ -33,7 +37,7 @@ export const getWidget = name => {
  * @param {import('./Widget').WidgetConfig} config
  * @return {Widget}
  */
-export const createWidget = config => {
+export const add = config => {
   const name = config.name;
   if (widgets[name]) {
     throw `Widget with name ${name} already exists!`;
@@ -49,8 +53,14 @@ export const createWidget = config => {
  */
 const widgetsFactory = widgetConfig => {
   switch (widgetConfig.name) {
+    case EnumWidgets.EDITOR:
+      return new EditorWidget(widgetConfig);
     case EnumWidgets.SELECT:
       return new SelectWidget(widgetConfig);
+    case EnumWidgets.MEASURE:
+      return new MeasureWidget(widgetConfig);
+    case EnumWidgets.BOOKMARKS:
+      return new BookmarksWidget(widgetConfig);
     case EnumWidgets.HIGHLIGHT:
       return new HighlightWidget(widgetConfig);
   }
