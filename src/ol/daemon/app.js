@@ -9,41 +9,8 @@ import { defaultAppConfig, defaultMapConfig } from './defaultConfig.js';
 import { initializePredefinedProjections } from './projections';
 import { createBasemapLayer, createOperationalLayer } from './layers';
 import { createWidgets } from './widgets/index.js';
-
-/**
- * @type {Map}
- */
-let map = undefined;
-
-/**
- * @type {import('../proj/Projection').default}
- */
-let mapProjection = undefined;
-
-export const getMapProjection = () => {
-  return mapProjection;
-};
-
-/**
- * @param {Map} createdMap
- */
-export const setMap = createdMap => {
-  map = createdMap;
-  mapProjection = map.getProjection();
-
-  if (window && process.env.NODE_ENV !== 'production') {
-    console.log('map created');
-    // @ts-ignore
-    window.mapp = map;
-  }
-};
-
-/**
- * @return {Map}
- */
-export const getMap = () => {
-  return map;
-};
+import { setMapProjection } from './map.js';
+import { createDefaultSelectStyle, createDefaultHighlightStyle } from './styles/defaultStyle';
 
 /**
  * Creates a new Map by specifying layers, controls and more options.
@@ -52,6 +19,9 @@ export const getMap = () => {
  */
 export const createMap = (mapConfig, backendUrl) => {
   try {
+    createDefaultSelectStyle();
+    createDefaultHighlightStyle();
+
     initializePredefinedProjections();
     if (backendUrl) {
       initializeBackend(backendUrl);
@@ -67,7 +37,7 @@ export const createMap = (mapConfig, backendUrl) => {
       center
     });
 
-    mapProjection = view.getProjection();
+    setMapProjection(view.getProjection());
 
     let layers = [];
     layers.push(...config.basemaps.map(options => createBasemapLayer(options)));
@@ -117,38 +87,3 @@ export const createApp = appConfig => {
     throw e;
   }
 };
-
-// /**
-//  *
-//  * @param {!String} configUrl
-//  */
-// export const createAppWithRemoteConfig = async configUrl => {
-//   try {
-//     const responce = await fetch(configUrl);
-//     const config = await responce.json();
-//     if (!config) {
-//       throw `Error loading config from url: ${configUrl}`;
-//     }
-//     const app = await createApp(config);
-//     return app;
-//   } catch ({ message }) {
-//     throw `Error while reading config from: ${configUrl}. ${message}`;
-//   }
-// };
-
-// /**
-//  * @param {import('./defaultConfig').AppConfig} appConfig
-//  * @return {Promise<Map>}
-//  */
-// const createApp = async appConfig => {
-//   try {
-//     appConfig = Object.assign({}, defaultAppConfig, appConfig);
-//     backend.initialize();
-//     const map = await createMap(appConfig.map);
-//     return map;
-//   } catch ({ message }) {
-//     throw `Error while creating app with config. ${message}`;
-//   }
-// };
-
-// export { backend, map, initializeMap, createAppWithRemoteConfig, createApp, createMap };

@@ -3,7 +3,7 @@ import { EnumBasemaps } from '../Basemaps';
 import { METERS_PER_UNIT } from '../../../proj/Units';
 import Field from '../fields/Field';
 import Relationship from '../relationships';
-import { getMapProjection } from '../../app';
+import { getMapProjection } from '../../map';
 import LayerProperty from '../../../layer/Property.js';
 
 /**
