@@ -14,7 +14,7 @@ let widgets = {};
 export const createWidgets = widgetsConfig => {
   widgets = {};
   for (let i = 0; i < widgetsConfig.length; i++) {
-    createWidget(widgetsConfig[i]);
+    add(widgetsConfig[i]);
   }
 };
 
@@ -23,7 +23,7 @@ export const createWidgets = widgetsConfig => {
  * @param {EnumWidgets} name
  * @return {Widget|undefined}
  */
-export const getWidget = name => {
+export const get = name => {
   return widgets[name];
 };
 
@@ -33,7 +33,7 @@ export const getWidget = name => {
  * @param {import('./Widget').WidgetConfig} config
  * @return {Widget}
  */
-export const createWidget = config => {
+export const add = config => {
   const name = config.name;
   if (widgets[name]) {
     throw `Widget with name ${name} already exists!`;
