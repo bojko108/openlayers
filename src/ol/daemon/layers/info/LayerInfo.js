@@ -613,14 +613,26 @@ export default class LayerInfo {
   }
 
   /**
-   * Create an oid value: '[layerInfo.name].[fid]'. If feature id value is undefined,
+   * Creates an oid value: '[layerInfo.name].[fid]'. If feature is undefined,
    * `this._fid` is used. Starts from -1 and goes to -Infinity.
-   * @param {import('../../../Feature').default} feature
+   * @param {import('../../../Feature').default} [feature]
    * @return {String}
    */
   createObjectId(feature) {
-    const id = feature.get(this.objectIdField) || --this._fid;
+    const id = feature ? feature.get(this.objectIdField) || --this._fid : --this._fid;
     return `${this.name}.${id}`;
+  }
+
+  /**
+   * Creates default properties for a feature. Uses `fields` array to determine
+   * the values.
+   * @param {import('../../../Feature').default} feature
+   */
+  createDefaultProperties(feature) {
+    for (let i = 0; i < this.fields.length; i++) {
+      const { name, defaultValue } = this.fields[i];
+      feature.set(name, defaultValue);
+    }
   }
 
   /**
