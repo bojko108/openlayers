@@ -2,15 +2,15 @@
  * @module ol/daemon/widgets/MeasureWidget
  */
 import Widget from './Widget';
-import MapBrowserEventType from '../../MapBrowserEventType';
 import Draw from '../../interaction/Draw';
 import Snap from '../../interaction/Snap';
 import { createFeatureStyle, createLabelStyle } from '../styles';
 import Style from '../../style/Style';
 import Collection from '../../Collection';
-import VectorSource from '../../source/Vector';
 import { EnumGeometryType } from './Editor';
 import { createOperationalLayer } from '../layers';
+import { getLengthOnSphere } from '../geodesy';
+import { getMapProjection } from '../map';
 
 /**
  * Constants for measure event types.
@@ -93,7 +93,15 @@ export default class MeasureWidget extends Widget {
     this._measureLayer = createOperationalLayer({
       metadata: { name: 'measureLayer' }
     });
-    this._measureLayer.setStyle([this._backgroundLine, this._featureStyle, this._labelStyle]);
+    this._measureLayer.setStyle((feature, resolution) => {
+      let styles = [this._backgroundLine, this._featureStyle];
+      if (feature.getGeometry().getType() === EnumGeometryType.LINESTRING) {
+        const length = getLengthOnSphere(feature.getGeometry(), getMapProjection().getCode());
+        this._labelStyle.getText().setText(`${length.toFixed(2)} m`);
+        styles.push(this._labelStyle);
+      }
+      return styles;
+    });
 
     if (options.map) {
       // @ts-ignore
@@ -118,12 +126,8 @@ export default class MeasureWidget extends Widget {
       style: (feature, resolution) => {
         let styles = [this._backgroundLine, this._measureStyle];
         if (feature.getGeometry().getType() === EnumGeometryType.LINESTRING) {
-          const text = feature
-            .getGeometry()
-            .getLength()
-            .toString();
-
-          this._labelStyle.getText().setText(text);
+          const length = getLengthOnSphere(feature.getGeometry(), getMapProjection().getCode());
+          this._labelStyle.getText().setText(`${length.toFixed(2)} m`);
           styles.push(this._labelStyle);
         }
         return styles;
