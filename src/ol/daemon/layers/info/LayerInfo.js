@@ -47,6 +47,13 @@ export default class LayerInfo {
     const layerInfo = Object.assign({}, defaultOptions, metadata);
 
     /**
+     * FID index. All newly created features will have this FID set. Starts from -1 and goes to -Infinity
+     * @private
+     * @type {Number}
+     */
+    this._fid = -1;
+
+    /**
      * @type {import("../../../layer/Base").default}
      * @private
      */
@@ -538,7 +545,7 @@ export default class LayerInfo {
      * @type {String}
      */
     let internalType;
-    
+
     switch (geometryType) {
       case EnumGeometryType.POLYGON:
       case EnumGeometryType.esriGeometryEnvelope:
@@ -558,7 +565,7 @@ export default class LayerInfo {
         internalType = EnumGeometryType.POINT;
         break;
     }
-    
+
     this._geometryType = internalType;
   }
   /**
@@ -606,12 +613,13 @@ export default class LayerInfo {
   }
 
   /**
-   * Create an oid value: '[layerInfo.name].[feature.getId()]'
+   * Create an oid value: '[layerInfo.name].[fid]'. If feature id value is undefined,
+   * `this._fid` is used. Starts from -1 and goes to -Infinity.
    * @param {import('../../../Feature').default} feature
    * @return {String}
    */
   createObjectId(feature) {
-    const id = feature.get(this.objectIdField);
+    const id = feature.get(this.objectIdField) || --this._fid;
     return `${this.name}.${id}`;
   }
 

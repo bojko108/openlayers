@@ -4,6 +4,10 @@
  */
 export const EnumWidgets = {
   /**
+   * Editor widget
+   */
+  EDITOR: 'editor',
+  /**
    * Select widget
    */
   SELECT: 'select',
