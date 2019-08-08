@@ -42,9 +42,11 @@ class BaseImageLayer extends Layer {
    */
   constructor(opt_options) {
     const options = opt_options ? opt_options : {};
-    
-    options.metadata.type = 'image';
-    
+
+    if (options.metadata) {
+      options.metadata.type = 'image';
+    }
+
     super(options);
   }
 }

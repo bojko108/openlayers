@@ -79,7 +79,9 @@ class BaseVectorLayer extends Layer {
     delete baseOptions.updateWhileAnimating;
     delete baseOptions.updateWhileInteracting;
 
-    baseOptions.metadata.type = 'vector';
+    if (baseOptions.metadata) {
+      baseOptions.metadata.type = 'vector';
+    }
 
     super(baseOptions);
 
