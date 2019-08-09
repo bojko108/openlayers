@@ -151,9 +151,6 @@ export default class EditorWidget extends Widget {
     // and then make new ones
     this._currentEdits.length = this._editIndex + 1;
 
-    
-    
-    
     // this._displayPopups = this.map.displayPopups;
     // this.map.displayPopups = false;
   }
@@ -290,8 +287,10 @@ export default class EditorWidget extends Widget {
    * @param {import('../../layer/Vector').default} layer
    * @param {Boolean} [snapping=false]
    * @param {function(import('../../Feature').default):void} callbak
+   * @param {String} [geometryType] - type of geometry to draw. This value gets precedence over
+   * `layer.layerInfo`. If both are undefined `Point` will be used.
    */
-  createFeature(layer, snapping, callbak) {
+  createFeature(layer, snapping, callbak, geometryType) {
     if (!this.isEditing) {
       throw 'Not in editing session!';
     }
@@ -305,7 +304,7 @@ export default class EditorWidget extends Widget {
     this._draw = new Draw({
       stopClick: true,
       source: layer.getSource(),
-      type: layer.layerInfo ? layer.layerInfo.geometryType : EnumGeometryType.POINT
+      type: geometryType ? geometryType : layer.layerInfo ? layer.layerInfo.geometryType : EnumGeometryType.POINT
     });
 
     this.map.addInteraction(this._draw);
