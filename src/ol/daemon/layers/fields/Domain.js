@@ -11,6 +11,14 @@
  * @property {!String|Number} code associated with the code value
  * @property {String} value associated with the code value
  * @property {String} [name] ESRI domains use `name` instead of `value`
+ * @property {String} [filter] value to filter domain values when showed in a list.
+ * @example
+ * // if `filter` is set the values will be filtered based on `FIELD_NAME` values.
+ * {
+ *  code: 1
+ *  value: 'Type A'
+ *  filter: 'FIELD_NAME.FIELD_VALUE'
+ * }
  */
 
 /**
@@ -49,8 +57,8 @@ export default class Domain {
      * @type {Array<CodedDomainValue>}
      */
     this.values = domain.codedValues
-      ? domain.codedValues.map(({ code, value, name }) => {
-          return { code, value: name || value };
+      ? domain.codedValues.map(({ code, value, name, filter }) => {
+          return { code, filter, value: name || value };
         })
       : [];
   }
