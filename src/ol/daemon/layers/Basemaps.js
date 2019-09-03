@@ -3,6 +3,7 @@ import OSM from '../../source/OSM';
 import BingMaps from '../../source/BingMaps';
 import Stamen from '../../source/Stamen';
 import TileWMS from '../../source/TileWMS';
+import TileArcGISRest from '../../source/TileArcGISRest';
 
 /**
  * @typedef {Object} BasemapSource
@@ -61,6 +62,10 @@ export const EnumBasemaps = {
    * Tiles in XYZ format
    */
   XYZ: 'xyz',
+  /**
+   * Tiles from ArcGIS Rest MapService
+   */
+  ARCGISREST: 'arcgisrest',
   /**
    * OpenTopoMap {@link http://opentopomap.org/}
    */
@@ -181,7 +186,7 @@ export default class Basemaps {
     });
   }
   /**
-   *Create a new XYZ source
+   * Create a new XYZ source
    * @param {!String} url
    * @param {?String} attribution
    */
@@ -191,6 +196,14 @@ export default class Basemaps {
       attributions: attribution,
       crossOrigin: 'anonymous'
     });
+  }
+  /**
+   * Create a new Tile source from ArcGIS Rest MapService
+   * @param {!import('../../source/TileArcGISRest').Options} options
+   */
+  static ARCGISREST(options) {
+    options.crossOrigin = options.crossOrigin || 'anonymous';
+    return new TileArcGISRest(options);
   }
   /**
    * Create new source for tile data with URL set in XYZ format

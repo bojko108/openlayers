@@ -39,12 +39,14 @@ export const createBasemapSource = options => {
       return Basemaps.WMS(options.url, options.params, options.attribution);
     case EnumBasemaps.XYZ:
       return Basemaps.XYZ(options.url, options.attribution);
+    case EnumBasemaps.ARCGISREST:
+      return Basemaps.ARCGISREST(options);
   }
 };
 
 /**
  * Creates a new basemap layer
- * 
+ *
  * @param {import('../../layer/BaseTile').Options|Object} options
  * @return {TileLayer}
  */
@@ -56,7 +58,7 @@ export const createBasemapLayer = options => {
 
 /**
  * Creates a new operational layer - vector layer
- * 
+ *
  * @param {import('../../layer/BaseVector').Options|Object} options
  * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer}
  */
