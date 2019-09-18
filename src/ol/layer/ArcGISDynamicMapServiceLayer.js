@@ -75,7 +75,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
     } else {
       const id = splitAtIndex(fid, fid.lastIndexOf('.'))[1];
       // @ts-ignore
-      const features = await this.search({ where: `${this.layerInfo.objectIdField} = ${id}` });
+      const features = await this.query({ where: `${this.layerInfo.objectIdField} = ${id}` });
       return features[0];
     }
   }
@@ -135,9 +135,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
               `{"xmin": ${extent[0]}, "ymin": ${extent[1]}, "xmax": ${extent[2]}, "ymax": ${extent[3]}, "spatialReference": ${outEPSGCode}}`
             );
 
-            const url = `${this.layerInfo.layerUrl}/query/?f=json&gdbVersion=${
-              this.layerInfo.gdbVersion
-            }&returngeometry=true&outFields=*&spatialRel=esriSpatialRelIntersects&geometry=${visibleExtent}&geometryType=esriGeometryEnvelope&inSR=${outEPSGCode}&outSR=${outEPSGCode}`;
+            const url = `${this.layerInfo.layerUrl}/query/?f=json&gdbVersion=${this.layerInfo.gdbVersion}&returngeometry=true&outFields=*&spatialRel=esriSpatialRelIntersects&geometry=${visibleExtent}&geometryType=esriGeometryEnvelope&inSR=${outEPSGCode}&outSR=${outEPSGCode}`;
 
             axios
               .get(url)

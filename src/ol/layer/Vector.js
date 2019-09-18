@@ -274,6 +274,7 @@ class VectorLayer extends BaseVectorLayer {
    */
   __getMapResolutionFromScale(scale) {
     const projection = getMapProjection();
+    // @ts-ignore
     const mpu = METERS_PER_UNIT[projection.getUnits()];
     return scale / (mpu * 39.37 * (25.4 / 0.28));
   }
