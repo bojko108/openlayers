@@ -9,7 +9,7 @@ import {stopPropagation} from '../events/Event.js';
 import EventType from '../events/EventType.js';
 import {clamp} from '../math.js';
 import PointerEventType from '../pointer/EventType.js';
-import PointerEventHandler from '../pointer/PointerEventHandler.js';
+import '@openlayers/pepjs';
 
 
 /**
@@ -135,31 +135,16 @@ class ZoomSlider extends Control {
     thumbElement.setAttribute('type', 'button');
     thumbElement.className = className + '-thumb ' + CLASS_UNSELECTABLE;
     const containerElement = this.element;
+    containerElement.setAttribute('touch-action', 'none');
     containerElement.className = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
     containerElement.appendChild(thumbElement);
-    /**
-     * @type {PointerEventHandler}
-     * @private
-     */
-    this.dragger_ = new PointerEventHandler(containerElement);
 
-    listen(this.dragger_, PointerEventType.POINTERDOWN,
-      this.handleDraggerStart_, this);
-    listen(this.dragger_, PointerEventType.POINTERMOVE,
-      this.handleDraggerDrag_, this);
-    listen(this.dragger_, PointerEventType.POINTERUP,
-      this.handleDraggerEnd_, this);
+    containerElement.addEventListener(PointerEventType.POINTERDOWN, this.handleDraggerStart_.bind(this), false);
+    containerElement.addEventListener(PointerEventType.POINTERMOVE, this.handleDraggerDrag_.bind(this), false);
+    containerElement.addEventListener(PointerEventType.POINTERUP, this.handleDraggerEnd_.bind(this), false);
 
-    listen(containerElement, EventType.CLICK, this.handleContainerClick_, this);
-    listen(thumbElement, EventType.CLICK, stopPropagation);
-  }
-
-  /**
-   * @inheritDoc
-   */
-  disposeInternal() {
-    this.dragger_.dispose();
-    super.disposeInternal();
+    containerElement.addEventListener(EventType.CLICK, this.handleContainerClick_.bind(this), false);
+    thumbElement.addEventListener(EventType.CLICK, stopPropagation, false);
   }
 
   /**
@@ -206,7 +191,7 @@ class ZoomSlider extends Control {
   }
 
   /**
-   * @param {MouseEvent} event The browser event to handle.
+   * @param {PointerEvent} event The browser event to handle.
    * @private
    */
   handleContainerClick_(event) {
@@ -219,7 +204,7 @@ class ZoomSlider extends Control {
     const resolution = this.getResolutionForPosition_(relativePosition);
     const zoom = view.getConstrainedZoom(view.getZoomForResolution(resolution));
 
-    view.animate({
+    view.animateInternal({
       zoom: zoom,
       duration: this.duration_,
       easing: easeOut
@@ -228,11 +213,11 @@ class ZoomSlider extends Control {
 
   /**
    * Handle dragger start events.
-   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @param {PointerEvent} event The drag event.
    * @private
    */
   handleDraggerStart_(event) {
-    if (!this.dragging_ && event.originalEvent.target === this.element.firstElementChild) {
+    if (!this.dragging_ && event.target === this.element.firstElementChild) {
       const element = /** @type {HTMLElement} */ (this.element.firstElementChild);
       this.getMap().getView().beginInteraction();
       this.startX_ = event.clientX - parseFloat(element.style.left);
@@ -243,9 +228,7 @@ class ZoomSlider extends Control {
         const drag = this.handleDraggerDrag_;
         const end = this.handleDraggerEnd_;
         this.dragListenerKeys_.push(
-          listen(document, EventType.MOUSEMOVE, drag, this),
           listen(document, PointerEventType.POINTERMOVE, drag, this),
-          listen(document, EventType.MOUSEUP, end, this),
           listen(document, PointerEventType.POINTERUP, end, this)
         );
       }
@@ -255,7 +238,7 @@ class ZoomSlider extends Control {
   /**
    * Handle dragger drag events.
    *
-   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @param {PointerEvent} event The drag event.
    * @private
    */
   handleDraggerDrag_(event) {
@@ -270,7 +253,7 @@ class ZoomSlider extends Control {
 
   /**
    * Handle dragger end events.
-   * @param {import("../pointer/PointerEvent.js").default} event The drag event.
+   * @param {PointerEvent} event The drag event.
    * @private
    */
   handleDraggerEnd_(event) {

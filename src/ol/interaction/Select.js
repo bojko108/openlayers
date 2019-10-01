@@ -4,16 +4,14 @@
 import {getUid} from '../util.js';
 import CollectionEventType from '../CollectionEventType.js';
 import {extend, includes} from '../array.js';
-import {listen} from '../events.js';
 import Event from '../events/Event.js';
 import {singleClick, never, shiftKeyOnly, pointerMove} from '../events/condition.js';
 import {TRUE} from '../functions.js';
 import GeometryType from '../geom/GeometryType.js';
 import Interaction from './Interaction.js';
-import VectorLayer from '../layer/Vector.js';
 import {clear} from '../obj.js';
-import VectorSource from '../source/Vector.js';
 import {createEditingStyle} from '../style/Style.js';
+import Collection from '../Collection.js';
 
 
 /**
@@ -88,8 +86,6 @@ const SelectEventType = {
  * that takes an {@link module:ol/Feature} and an
  * {@link module:ol/layer/Layer} and returns `true` if the feature may be
  * selected or `false` otherwise.
- * @property {boolean} [wrapX=true] Wrap the world horizontally on the selection
- * overlay.
  * @property {number} [hitTolerance=0] Hit-detection tolerance. Pixels inside
  * the radius around the given position will be checked for features.
  */
@@ -206,23 +202,25 @@ class Select extends Interaction {
      */
     this.hitTolerance_ = options.hitTolerance ? options.hitTolerance : 0;
 
-    const featureOverlay = new VectorLayer({
-      source: new VectorSource({
-        useSpatialIndex: false,
-        features: options.features,
-        wrapX: options.wrapX
-      }),
-      style: options.style ? options.style :
-        getDefaultStyleFunction(),
-      updateWhileAnimating: true,
-      updateWhileInteracting: true
-    });
+    /**
+     * @private
+     * @type {import("../style/Style.js").default|Array.<import("../style/Style.js").default>|import("../style/Style.js").StyleFunction|null}
+     */
+    this.style_ = options.style ? options.style : getDefaultStyleFunction();
+
+    /**
+     * An association between selected feature (key)
+     * and original style (value)
+     * @private
+     * @type {Object.<number, import("../style/Style.js").default|Array.<import("../style/Style.js").default>|import("../style/Style.js").StyleFunction>}
+     */
+    this.featureStyleAssociation_ = {};
 
     /**
      * @private
-     * @type {VectorLayer}
+     * @type {import("../Collection.js").default}
      */
-    this.featureOverlay_ = featureOverlay;
+    this.features_ = options.features || new Collection();
 
     /** @type {function(import("../layer/Layer.js").default): boolean} */
     let layerFilter;
@@ -254,10 +252,8 @@ class Select extends Interaction {
     this.featureLayerAssociation_ = {};
 
     const features = this.getFeatures();
-    listen(features, CollectionEventType.ADD,
-      this.addFeature_, this);
-    listen(features, CollectionEventType.REMOVE,
-      this.removeFeature_, this);
+    features.addEventListener(CollectionEventType.ADD, this.addFeature_.bind(this));
+    features.addEventListener(CollectionEventType.REMOVE, this.removeFeature_.bind(this));
   }
 
   /**
@@ -275,7 +271,7 @@ class Select extends Interaction {
    * @api
    */
   getFeatures() {
-    return this.featureOverlay_.getSource().getFeaturesCollection();
+    return this.features_;
   }
 
   /**
@@ -293,22 +289,13 @@ class Select extends Interaction {
    * programmatic method like pushing features to
    * {@link module:ol/interaction/Select~Select#getFeatures collection}.
    * @param {import("../Feature.js").FeatureLike} feature Feature
-   * @return {VectorLayer} Layer.
+   * @return {import('../layer/Vector.js').default} Layer.
    * @api
    */
   getLayer(feature) {
     return (
-      /** @type {VectorLayer} */ (this.featureLayerAssociation_[getUid(feature)])
+      /** @type {import('../layer/Vector.js').default} */ (this.featureLayerAssociation_[getUid(feature)])
     );
-  }
-
-  /**
-   * Get the overlay layer that this interaction renders selected features to.
-   * @return {VectorLayer} Overlay layer.
-   * @api
-   */
-  getOverlay() {
-    return this.featureOverlay_;
   }
 
   /**
@@ -330,14 +317,12 @@ class Select extends Interaction {
    */
   setMap(map) {
     const currentMap = this.getMap();
-    const selectedFeatures = this.getFeatures();
-    if (currentMap) {
-      selectedFeatures.forEach(currentMap.unskipFeature.bind(currentMap));
+    if (currentMap && this.style_) {
+      this.features_.forEach(this.removeSelectedStyle_.bind(this));
     }
     super.setMap(map);
-    this.featureOverlay_.setMap(map);
-    if (map) {
-      selectedFeatures.forEach(map.skipFeature.bind(map));
+    if (map && this.style_) {
+      this.features_.forEach(this.giveSelectedStyle_.bind(this));
     }
   }
 
@@ -346,9 +331,9 @@ class Select extends Interaction {
    * @private
    */
   addFeature_(evt) {
-    const map = this.getMap();
-    if (map) {
-      map.skipFeature(/** @type {import("../Feature.js").default} */ (evt.element));
+    const feature = evt.element;
+    if (this.style_) {
+      this.giveSelectedStyle_(feature);
     }
   }
 
@@ -357,10 +342,30 @@ class Select extends Interaction {
    * @private
    */
   removeFeature_(evt) {
-    const map = this.getMap();
-    if (map) {
-      map.unskipFeature(/** @type {import("../Feature.js").default} */ (evt.element));
+    const feature = evt.element;
+    if (this.style_) {
+      this.removeSelectedStyle_(feature);
     }
+  }
+
+  /**
+   * @param {import("../Feature.js").default} feature Feature
+   * @private
+   */
+  giveSelectedStyle_(feature) {
+    const key = getUid(feature);
+    this.featureStyleAssociation_[key] = feature.getStyle();
+    feature.setStyle(this.style_);
+  }
+
+  /**
+   * @param {import("../Feature.js").default} feature Feature
+   * @private
+   */
+  removeSelectedStyle_(feature) {
+    const key = getUid(feature);
+    feature.setStyle(this.featureStyleAssociation_[key]);
+    delete this.featureStyleAssociation_[key];
   }
 
   /**
@@ -474,7 +479,7 @@ function getDefaultStyleFunction() {
   extend(styles[GeometryType.POLYGON], styles[GeometryType.LINE_STRING]);
   extend(styles[GeometryType.GEOMETRY_COLLECTION], styles[GeometryType.LINE_STRING]);
 
-  return function(feature, resolution) {
+  return function(feature) {
     if (!feature.getGeometry()) {
       return null;
     }

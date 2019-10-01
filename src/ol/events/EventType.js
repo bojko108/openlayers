@@ -9,14 +9,14 @@
 export default {
   /**
    * Generic change event. Triggered when the revision counter is increased.
-   * @event module:ol/events/Event~Event#change
+   * @event module:ol/events/Event~BaseEvent#change
    * @api
    */
   CHANGE: 'change',
 
   /**
    * Generic error event. Triggered when an error occurs.
-   * @event module:ol/events/Event~Event#error
+   * @event module:ol/events/Event~BaseEvent#error
    * @api
    */
   ERROR: 'error',
@@ -31,15 +31,6 @@ export default {
   KEYDOWN: 'keydown',
   KEYPRESS: 'keypress',
   LOAD: 'load',
-  MOUSEDOWN: 'mousedown',
-  MOUSEMOVE: 'mousemove',
-  MOUSEOUT: 'mouseout',
-  MOUSEUP: 'mouseup',
-  MOUSEWHEEL: 'mousewheel',
-  MSPOINTERDOWN: 'MSPointerDown',
   RESIZE: 'resize',
-  TOUCHSTART: 'touchstart',
-  TOUCHMOVE: 'touchmove',
-  TOUCHEND: 'touchend',
   WHEEL: 'wheel'
 };

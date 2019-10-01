@@ -3,7 +3,8 @@
  */
 import {getUid} from '../../util.js';
 import ViewHint from '../../ViewHint.js';
-import {buffer, createEmpty, containsExtent, getWidth} from '../../extent.js';
+import {buffer, createEmpty, containsExtent, getWidth, intersects as intersectsExtent} from '../../extent.js';
+import {fromUserExtent, toUserExtent, getUserProjection, getTransformFromProjections} from '../../proj.js';
 import CanvasBuilderGroup from '../../render/canvas/BuilderGroup.js';
 import ExecutorGroup, {replayDeclutter} from '../../render/canvas/ExecutorGroup.js';
 import CanvasLayerRenderer from './Layer.js';
@@ -23,6 +24,10 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
   constructor(vectorLayer) {
 
     super(vectorLayer);
+
+    /** @private */
+    this.boundHandleStyleImageChange_ = this.handleStyleImageChange_.bind(this);
+
 
     /**
      * @private
@@ -125,10 +130,13 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
     const vectorSource = this.getLayer().getSource();
 
     // clipped rendering if layer extent is set
-    const clipExtent = layerState.extent;
-    const clipped = clipExtent !== undefined;
-    if (clipped) {
-      this.clip(context, frameState, clipExtent);
+    let clipped = false;
+    if (layerState.extent) {
+      const layerExtent = fromUserExtent(layerState.extent, projection);
+      clipped = !containsExtent(layerExtent, frameState.extent) && intersectsExtent(layerExtent, frameState.extent);
+      if (clipped) {
+        this.clip(context, frameState, layerExtent);
+      }
     }
 
 
@@ -136,9 +144,8 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
     const snapToPixel = !(viewHints[ViewHint.ANIMATING] || viewHints[ViewHint.INTERACTING]);
 
     const transform = this.getRenderTransform(frameState, width, height, 0);
-    const skippedFeatureUids = layerState.managed ? frameState.skippedFeatureUids : {};
-    const declutterReplays = /** @type {import("../../layer/Vector.js").default} */ (this.getLayer()).getDeclutter() ? {} : null;
-    replayGroup.execute(context, transform, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
+    const declutterReplays = this.getLayer().getDeclutter() ? {} : null;
+    replayGroup.execute(context, transform, rotation, snapToPixel, undefined, declutterReplays);
 
     if (vectorSource.getWrapX() && projection.canWrapX() && !containsExtent(projectionExtent, extent)) {
       let startX = extent[0];
@@ -149,7 +156,7 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
         --world;
         offsetX = worldWidth * world;
         const transform = this.getRenderTransform(frameState, width, height, offsetX);
-        replayGroup.execute(context, transform, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
+        replayGroup.execute(context, transform, rotation, snapToPixel, undefined, declutterReplays);
         startX += worldWidth;
       }
       world = 0;
@@ -158,7 +165,7 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
         ++world;
         offsetX = worldWidth * world;
         const transform = this.getRenderTransform(frameState, width, height, offsetX);
-        replayGroup.execute(context, transform, rotation, skippedFeatureUids, snapToPixel, undefined, declutterReplays);
+        replayGroup.execute(context, transform, rotation, snapToPixel, undefined, declutterReplays);
         startX -= worldWidth;
       }
     }
@@ -192,10 +199,11 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
     } else {
       const resolution = frameState.viewState.resolution;
       const rotation = frameState.viewState.rotation;
-      const layer = /** @type {import("../../layer/Vector").default} */ (this.getLayer());
+      const layer = this.getLayer();
       /** @type {!Object<string, boolean>} */
       const features = {};
-      const result = this.replayGroup_.forEachFeatureAtCoordinate(coordinate, resolution, rotation, hitTolerance, {},
+
+      const result = this.replayGroup_.forEachFeatureAtCoordinate(coordinate, resolution, rotation, hitTolerance,
         /**
          * @param {import("../../Feature.js").FeatureLike} feature Feature.
          * @return {?} Callback result.
@@ -207,6 +215,7 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
             return callback(feature, layer);
           }
         }, layer.getDeclutter() ? declutteredFeatures : null);
+
       return result;
     }
   }
@@ -234,7 +243,7 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
    * @inheritDoc
    */
   prepareFrame(frameState) {
-    const vectorLayer = /** @type {import("../../layer/Vector.js").default} */ (this.getLayer());
+    const vectorLayer = this.getLayer();
     const vectorSource = vectorLayer.getSource();
 
     const animating = frameState.viewHints[ViewHint.ANIMATING];
@@ -297,7 +306,16 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
       getRenderTolerance(resolution, pixelRatio), extent, resolution,
       pixelRatio, vectorLayer.getDeclutter());
 
-    vectorSource.loadFeatures(extent, resolution, projection);
+    const userProjection = getUserProjection();
+    let userTransform;
+    if (userProjection) {
+      vectorSource.loadFeatures(toUserExtent(extent, projection), resolution, userProjection);
+      userTransform = getTransformFromProjections(userProjection, projection);
+    } else {
+      vectorSource.loadFeatures(extent, resolution, projection);
+    }
+
+    const squaredTolerance = getSquaredRenderTolerance(resolution, pixelRatio);
 
     /**
      * @param {import("../../Feature.js").default} feature Feature.
@@ -310,15 +328,16 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
         styles = styleFunction(feature, resolution);
       }
       if (styles) {
-        const dirty = this.renderFeature(
-          feature, resolution, pixelRatio, styles, replayGroup);
+        const dirty = this.renderFeature(feature, squaredTolerance, styles, replayGroup, userTransform);
         this.dirty_ = this.dirty_ || dirty;
       }
     }.bind(this);
+
+    const userExtent = toUserExtent(extent, projection);
     if (vectorLayerRenderOrder) {
       /** @type {Array<import("../../Feature.js").default>} */
       const features = [];
-      vectorSource.forEachFeatureInExtent(extent,
+      vectorSource.forEachFeatureInExtent(userExtent,
         /**
          * @param {import("../../Feature.js").default} feature Feature.
          */
@@ -330,7 +349,7 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
         render(features[i]);
       }
     } else {
-      vectorSource.forEachFeatureInExtent(extent, render);
+      vectorSource.forEachFeatureInExtent(userExtent, render);
     }
 
     const replayGroupInstructions = replayGroup.finish();
@@ -350,13 +369,13 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
 
   /**
    * @param {import("../../Feature.js").default} feature Feature.
-   * @param {number} resolution Resolution.
-   * @param {number} pixelRatio Pixel ratio.
+   * @param {number} squaredTolerance Squared render tolerance.
    * @param {import("../../style/Style.js").default|Array<import("../../style/Style.js").default>} styles The style or array of styles.
    * @param {import("../../render/canvas/BuilderGroup.js").default} builderGroup Builder group.
+   * @param {import("../../proj.js").TransformFunction} opt_transform Transform from user to view projection.
    * @return {boolean} `true` if an image is loading.
    */
-  renderFeature(feature, resolution, pixelRatio, styles, builderGroup) {
+  renderFeature(feature, squaredTolerance, styles, builderGroup, opt_transform) {
     if (!styles) {
       return false;
     }
@@ -364,15 +383,13 @@ class CanvasVectorLayerRenderer extends CanvasLayerRenderer {
     if (Array.isArray(styles)) {
       for (let i = 0, ii = styles.length; i < ii; ++i) {
         loading = renderFeature(
-          builderGroup, feature, styles[i],
-          getSquaredRenderTolerance(resolution, pixelRatio),
-          this.handleStyleImageChange_, this) || loading;
+          builderGroup, feature, styles[i], squaredTolerance,
+          this.boundHandleStyleImageChange_, opt_transform) || loading;
       }
     } else {
       loading = renderFeature(
-        builderGroup, feature, styles,
-        getSquaredRenderTolerance(resolution, pixelRatio),
-        this.handleStyleImageChange_, this);
+        builderGroup, feature, styles, squaredTolerance,
+        this.boundHandleStyleImageChange_, opt_transform);
     }
     return loading;
   }

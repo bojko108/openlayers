@@ -1,14 +1,12 @@
 /**
  * @module ol/render/canvas/Executor
  */
-import {getUid} from '../../util.js';
 import {equals} from '../../array.js';
 import {createEmpty, createOrUpdate,
   createOrUpdateEmpty, extend, intersects} from '../../extent.js';
 import {lineStringLength} from '../../geom/flat/length.js';
 import {drawTextOnPath} from '../../geom/flat/textpath.js';
 import {transform2D} from '../../geom/flat/transform.js';
-import {isEmpty} from '../../obj.js';
 import {drawImage, defaultPadding, defaultTextBaseline} from '../canvas.js';
 import CanvasInstruction from './Instruction.js';
 import {TEXT_ALIGN} from './TextBuilder.js';
@@ -497,8 +495,6 @@ class Executor extends Disposable {
    * @private
    * @param {CanvasRenderingContext2D} context Context.
    * @param {import("../../transform.js").Transform} transform Transform.
-   * @param {Object<string, boolean>} skippedFeaturesHash Ids of features
-   *     to skip.
    * @param {Array<*>} instructions Instructions array.
    * @param {boolean} snapToPixel Snap point symbols and text to integer pixels.
    * @param {function(import("../../Feature.js").FeatureLike): T|undefined} featureCallback Feature callback.
@@ -510,7 +506,6 @@ class Executor extends Disposable {
   execute_(
     context,
     transform,
-    skippedFeaturesHash,
     instructions,
     snapToPixel,
     featureCallback,
@@ -530,12 +525,11 @@ class Executor extends Disposable {
         transform, this.pixelCoordinates_);
       transformSetFromArray(this.renderedTransform_, transform);
     }
-    const skipFeatures = !isEmpty(skippedFeaturesHash);
     let i = 0; // instruction index
     const ii = instructions.length; // end of instructions
     let d = 0; // data index
     let dd; // end of per-instruction data
-    let anchorX, anchorY, prevX, prevY, roundX, roundY, declutterGroup, image, text, textKey;
+    let anchorX, anchorY, prevX, prevY, roundX, roundY, declutterGroup, declutterGroups, image, text, textKey;
     let strokeKey, fillKey;
     let pendingFill = 0;
     let pendingStroke = 0;
@@ -562,10 +556,9 @@ class Executor extends Disposable {
       switch (type) {
         case CanvasInstruction.BEGIN_GEOMETRY:
           feature = /** @type {import("../../Feature.js").FeatureLike} */ (instruction[1]);
-          if ((skipFeatures && skippedFeaturesHash[getUid(feature)]) || !feature.getGeometry()) {
+          if (!feature.getGeometry()) {
             i = /** @type {number} */ (instruction[2]);
-          } else if (opt_hitExtent !== undefined && !intersects(
-            opt_hitExtent, feature.getGeometry().getExtent())) {
+          } else if (opt_hitExtent !== undefined && !intersects(opt_hitExtent, instruction[3])) {
             i = /** @type {number} */ (instruction[2]) + 1;
           } else {
             ++i;
@@ -633,7 +626,7 @@ class Executor extends Disposable {
           // Remaining arguments in DRAW_IMAGE are in alphabetical order
           anchorX = /** @type {number} */ (instruction[4]);
           anchorY = /** @type {number} */ (instruction[5]);
-          declutterGroup = featureCallback ? null : /** @type {import("../canvas.js").DeclutterGroup} */ (instruction[6]);
+          declutterGroups = featureCallback ? null : instruction[6];
           let height = /** @type {number} */ (instruction[7]);
           const opacity = /** @type {number} */ (instruction[8]);
           const originX = /** @type {number} */ (instruction[9]);
@@ -642,7 +635,6 @@ class Executor extends Disposable {
           let rotation = /** @type {number} */ (instruction[12]);
           const scale = /** @type {number} */ (instruction[13]);
           let width = /** @type {number} */ (instruction[14]);
-
 
           if (!image && instruction.length >= 19) {
             // create label images
@@ -679,9 +671,19 @@ class Executor extends Disposable {
             rotation += viewRotation;
           }
           let widthIndex = 0;
+          let declutterGroupIndex = 0;
           for (; d < dd; d += 2) {
             if (geometryWidths && geometryWidths[widthIndex++] < width / this.pixelRatio) {
               continue;
+            }
+            if (declutterGroups) {
+              const index = Math.floor(declutterGroupIndex);
+              if (declutterGroups.length < index + 1) {
+                declutterGroup = createEmpty();
+                declutterGroup.push(declutterGroups[0][4]);
+                declutterGroups.push(declutterGroup);
+              }
+              declutterGroup = declutterGroups[index];
             }
             this.replayImage_(context,
               pixelCoordinates[d], pixelCoordinates[d + 1], image, anchorX, anchorY,
@@ -689,15 +691,21 @@ class Executor extends Disposable {
               snapToPixel, width, padding,
               backgroundFill ? /** @type {Array<*>} */ (lastFillInstruction) : null,
               backgroundStroke ? /** @type {Array<*>} */ (lastStrokeInstruction) : null);
+            if (declutterGroup) {
+              if (declutterGroupIndex === Math.floor(declutterGroupIndex)) {
+                this.declutterItems.push(this, declutterGroup, feature);
+              }
+              declutterGroupIndex += 1 / declutterGroup[4];
+
+            }
           }
-          this.declutterItems.push(this, declutterGroup, feature);
           ++i;
           break;
         case CanvasInstruction.DRAW_CHARS:
           const begin = /** @type {number} */ (instruction[1]);
           const end = /** @type {number} */ (instruction[2]);
           const baseline = /** @type {number} */ (instruction[3]);
-          declutterGroup = featureCallback ? null : /** @type {import("../canvas.js").DeclutterGroup} */ (instruction[4]);
+          declutterGroup = featureCallback ? null : instruction[4];
           const overflow = /** @type {number} */ (instruction[5]);
           fillKey = /** @type {string} */ (instruction[6]);
           const maxAngle = /** @type {number} */ (instruction[7]);
@@ -856,22 +864,17 @@ class Executor extends Disposable {
    * @param {CanvasRenderingContext2D} context Context.
    * @param {import("../../transform.js").Transform} transform Transform.
    * @param {number} viewRotation View rotation.
-   * @param {Object<string, boolean>} skippedFeaturesHash Ids of features
-   *     to skip.
    * @param {boolean} snapToPixel Snap point symbols and text to integer pixels.
    */
-  execute(context, transform, viewRotation, skippedFeaturesHash, snapToPixel) {
+  execute(context, transform, viewRotation, snapToPixel) {
     this.viewRotation_ = viewRotation;
-    this.execute_(context, transform,
-      skippedFeaturesHash, this.instructions, snapToPixel, undefined, undefined);
+    this.execute_(context, transform, this.instructions, snapToPixel, undefined, undefined);
   }
 
   /**
    * @param {CanvasRenderingContext2D} context Context.
    * @param {import("../../transform.js").Transform} transform Transform.
    * @param {number} viewRotation View rotation.
-   * @param {Object<string, boolean>} skippedFeaturesHash Ids of features
-   *     to skip.
    * @param {function(import("../../Feature.js").FeatureLike): T=} opt_featureCallback
    *     Feature callback.
    * @param {import("../../extent.js").Extent=} opt_hitExtent Only check features that intersect this
@@ -883,12 +886,11 @@ class Executor extends Disposable {
     context,
     transform,
     viewRotation,
-    skippedFeaturesHash,
     opt_featureCallback,
     opt_hitExtent
   ) {
     this.viewRotation_ = viewRotation;
-    return this.execute_(context, transform, skippedFeaturesHash,
+    return this.execute_(context, transform,
       this.hitDetectionInstructions, true, opt_featureCallback, opt_hitExtent);
   }
 }

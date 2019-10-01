@@ -91,28 +91,28 @@ function renderCircleGeometry(builderGroup, geometry, style, feature) {
  * @param {import("../Feature.js").FeatureLike} feature Feature.
  * @param {import("../style/Style.js").default} style Style.
  * @param {number} squaredTolerance Squared tolerance.
- * @param {function(this: T, import("../events/Event.js").default): void} listener Listener function.
- * @param {T} thisArg Value to use as `this` when executing `listener`.
+ * @param {function(import("../events/Event.js").default): void} listener Listener function.
+ * @param {import("../proj.js").TransformFunction} [opt_transform] Transform from user to view projection.
  * @return {boolean} `true` if style is loading.
  * @template T
  */
-export function renderFeature(replayGroup, feature, style, squaredTolerance, listener, thisArg) {
+export function renderFeature(replayGroup, feature, style, squaredTolerance, listener, opt_transform) {
   let loading = false;
   const imageStyle = style.getImage();
   if (imageStyle) {
     let imageState = imageStyle.getImageState();
     if (imageState == ImageState.LOADED || imageState == ImageState.ERROR) {
-      imageStyle.unlistenImageChange(listener, thisArg);
+      imageStyle.unlistenImageChange(listener);
     } else {
       if (imageState == ImageState.IDLE) {
         imageStyle.load();
       }
       imageState = imageStyle.getImageState();
-      imageStyle.listenImageChange(listener, thisArg);
+      imageStyle.listenImageChange(listener);
       loading = true;
     }
   }
-  renderFeatureInternal(replayGroup, feature, style, squaredTolerance);
+  renderFeatureInternal(replayGroup, feature, style, squaredTolerance, opt_transform);
 
   return loading;
 }
@@ -123,13 +123,14 @@ export function renderFeature(replayGroup, feature, style, squaredTolerance, lis
  * @param {import("../Feature.js").FeatureLike} feature Feature.
  * @param {import("../style/Style.js").default} style Style.
  * @param {number} squaredTolerance Squared tolerance.
+ * @param {import("../proj.js").TransformFunction} [opt_transform] Optional transform function.
  */
-function renderFeatureInternal(replayGroup, feature, style, squaredTolerance) {
+function renderFeatureInternal(replayGroup, feature, style, squaredTolerance, opt_transform) {
   const geometry = style.getGeometryFunction()(feature);
   if (!geometry) {
     return;
   }
-  const simplifiedGeometry = geometry.getSimplifiedGeometry(squaredTolerance);
+  const simplifiedGeometry = geometry.simplifyTransformed(squaredTolerance, opt_transform);
   const renderer = style.getRenderer();
   if (renderer) {
     renderGeometry(replayGroup, simplifiedGeometry, style, feature);

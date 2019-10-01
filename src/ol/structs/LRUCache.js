@@ -22,7 +22,7 @@ import EventType from '../events/EventType.js';
  * Object's properties (e.g. 'hasOwnProperty' is not allowed as a key). Expiring
  * items from the cache is the responsibility of the user.
  *
- * @fires import("../events/Event.js").Event
+ * @fires import("../events/Event.js").default
  * @template T
  */
 class LRUCache extends EventTarget {
@@ -96,7 +96,7 @@ class LRUCache extends EventTarget {
 
 
   /**
-   * @param {function(T, string, LRUCache): ?} f The function
+   * @param {function(T, string, LRUCache<T>): ?} f The function
    *     to call for every entry from the oldest to the newer. This function takes
    *     3 arguments (the entry value, the entry key and the LRUCache object).
    *     The return value is ignored.

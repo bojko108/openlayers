@@ -9,6 +9,7 @@ import {getCenter} from '../../../../../src/ol/extent.js';
 import MVT from '../../../../../src/ol/format/MVT.js';
 import Point from '../../../../../src/ol/geom/Point.js';
 import VectorTileLayer from '../../../../../src/ol/layer/VectorTile.js';
+import {getKey} from '../../../../../src/ol/tilecoord.js';
 import {get as getProjection} from '../../../../../src/ol/proj.js';
 import {checkedFonts} from '../../../../../src/ol/render/canvas.js';
 import RenderFeature from '../../../../../src/ol/render/Feature.js';
@@ -73,7 +74,8 @@ describe('ol.renderer.canvas.VectorTileLayer', function() {
       source = new VectorTileSource({
         format: new MVT(),
         tileClass: TileClass,
-        tileGrid: createXYZ()
+        tileGrid: createXYZ(),
+        url: '{z}/{x}/{y}.pbf'
       });
       source.getSourceTiles = function() {
         return [new TileClass([0, 0, 0])];
@@ -300,12 +302,8 @@ describe('ol.renderer.canvas.VectorTileLayer', function() {
         tileClass: TileClass,
         tileGrid: createXYZ()
       });
-      source.sourceTiles_ = {
-        '0/0/0': sourceTile
-      };
-      source.sourceTilesByTileKey_ = {
-        '0/0/0': [sourceTile]
-      };
+      source.sourceTileByCoordKey_[getKey(sourceTile.tileCoord)] = sourceTile;
+      source.sourceTilesByTileKey_[sourceTile.getKey()] = [sourceTile];
       executorGroup = {};
       source.getTile = function() {
         const tile = VectorTileSource.prototype.getTile.apply(source, arguments);
@@ -317,7 +315,7 @@ describe('ol.renderer.canvas.VectorTileLayer', function() {
       });
       renderer = new CanvasVectorTileLayerRenderer(layer);
       executorGroup.forEachFeatureAtCoordinate = function(coordinate,
-        resolution, rotation, hitTolerance, skippedFeaturesUids, callback) {
+        resolution, rotation, hitTolerance, callback) {
         const feature = new Feature();
         callback(feature);
         callback(feature);
@@ -329,7 +327,6 @@ describe('ol.renderer.canvas.VectorTileLayer', function() {
       const coordinate = [0, 0];
       const frameState = {
         layerStatesArray: [{}],
-        skippedFeatureUids: {},
         viewState: {
           projection: getProjection('EPSG:3857'),
           resolution: 1,
@@ -373,7 +370,8 @@ describe('ol.renderer.canvas.VectorTileLayer', function() {
           const features = map.getFeaturesAtPixel([96, 96]);
           document.body.removeChild(target);
           map.dispose();
-          expect(features).to.be(null);
+          expect(features).to.be.an(Array);
+          expect(features).to.be.empty();
           done();
         }, 200);
       });

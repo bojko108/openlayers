@@ -31,7 +31,7 @@ class CanvasPolygonBuilder extends CanvasBuilder {
   drawFlatCoordinatess_(flatCoordinates, offset, ends, stride) {
     const state = this.state;
     const fill = state.fillStyle !== undefined;
-    const stroke = state.strokeStyle != undefined;
+    const stroke = state.strokeStyle !== undefined;
     const numEnds = ends.length;
     this.instructions.push(beginPathInstruction);
     this.hitDetectionInstructions.push(beginPathInstruction);
@@ -72,7 +72,7 @@ class CanvasPolygonBuilder extends CanvasBuilder {
       return;
     }
     this.setFillStrokeStyles_();
-    this.beginGeometry(feature);
+    this.beginGeometry(circleGeometry, feature);
     if (state.fillStyle !== undefined) {
       this.hitDetectionInstructions.push([
         CanvasInstruction.SET_FILL_STYLE,
@@ -94,9 +94,9 @@ class CanvasPolygonBuilder extends CanvasBuilder {
     const circleInstruction = [CanvasInstruction.CIRCLE, myBegin];
     this.instructions.push(beginPathInstruction, circleInstruction);
     this.hitDetectionInstructions.push(beginPathInstruction, circleInstruction);
-    this.hitDetectionInstructions.push(fillInstruction);
     if (state.fillStyle !== undefined) {
       this.instructions.push(fillInstruction);
+      this.hitDetectionInstructions.push(fillInstruction);
     }
     if (state.strokeStyle !== undefined) {
       this.instructions.push(strokeInstruction);
@@ -116,7 +116,7 @@ class CanvasPolygonBuilder extends CanvasBuilder {
       return;
     }
     this.setFillStrokeStyles_();
-    this.beginGeometry(feature);
+    this.beginGeometry(polygonGeometry, feature);
     if (state.fillStyle !== undefined) {
       this.hitDetectionInstructions.push([
         CanvasInstruction.SET_FILL_STYLE,
@@ -148,7 +148,7 @@ class CanvasPolygonBuilder extends CanvasBuilder {
       return;
     }
     this.setFillStrokeStyles_();
-    this.beginGeometry(feature);
+    this.beginGeometry(multiPolygonGeometry, feature);
     if (state.fillStyle !== undefined) {
       this.hitDetectionInstructions.push([
         CanvasInstruction.SET_FILL_STYLE,

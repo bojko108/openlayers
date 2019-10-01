@@ -8,7 +8,7 @@ import {transform2D} from './flat/transform.js';
 import {get as getProjection, getTransform} from '../proj.js';
 import Units from '../proj/Units.js';
 import {create as createTransform, compose as composeTransform} from '../transform.js';
-
+import {memoizeOne} from '../functions.js';
 
 /**
  * @type {import("../transform.js").Transform}
@@ -47,12 +47,6 @@ class Geometry extends BaseObject {
 
     /**
      * @protected
-     * @type {Object<string, Geometry>}
-     */
-    this.simplifiedGeometryCache = {};
-
-    /**
-     * @protected
      * @type {number}
      */
     this.simplifiedGeometryMaxMinSquaredTolerance = 0;
@@ -63,6 +57,34 @@ class Geometry extends BaseObject {
      */
     this.simplifiedGeometryRevision = 0;
 
+    /**
+     * Get a transformed and simplified version of the geometry.
+     * @abstract
+     * @param {number} revision The geometry revision.
+     * @param {number} squaredTolerance Squared tolerance.
+     * @param {import("../proj.js").TransformFunction} [opt_transform] Optional transform function.
+     * @return {Geometry} Simplified geometry.
+     */
+    this.simplifyTransformedInternal = memoizeOne(function(revision, squaredTolerance, opt_transform) {
+      if (!opt_transform) {
+        return this.getSimplifiedGeometry(squaredTolerance);
+      }
+      const clone = this.clone();
+      clone.applyTransform(opt_transform);
+      return clone.getSimplifiedGeometry(squaredTolerance);
+    });
+
+  }
+
+  /**
+   * Get a transformed and simplified version of the geometry.
+   * @abstract
+   * @param {number} squaredTolerance Squared tolerance.
+   * @param {import("../proj.js").TransformFunction} [opt_transform] Optional transform function.
+   * @return {Geometry} Simplified geometry.
+   */
+  simplifyTransformed(squaredTolerance, opt_transform) {
+    return this.simplifyTransformedInternal(this.getRevision(), squaredTolerance, opt_transform);
   }
 
   /**

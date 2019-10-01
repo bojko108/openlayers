@@ -16,6 +16,7 @@ import SourceState from '../source/State.js';
 
 /**
  * @typedef {Object} Options
+ * @property {string} [className='ol-layer'] A CSS class name to set to the layer element.
  * @property {number} [opacity=1] Opacity (0, 1).
  * @property {boolean} [visible=true] Visibility.
  * @property {import("../extent.js").Extent} [extent] The bounding extent for layer rendering.  The layer will not be
@@ -70,6 +71,11 @@ import SourceState from '../source/State.js';
  *
  * A generic `change` event is fired when the state of the source changes.
  *
+ * Please note that for performance reasons several layers might get rendered to
+ * the same HTML element, which will cause {@link module:ol/Map~Map#forEachLayerAtPixel} to
+ * give false positives. To avoid this, apply different `className` properties to the
+ * layers at creation time.
+ *
  * @fires import("../render/Event.js").RenderEvent#prerender
  * @fires import("../render/Event.js").RenderEvent#postrender
  *
@@ -119,7 +125,7 @@ class Layer extends BaseLayer {
       this.setMap(options.map);
     }
 
-    listen(this, getChangeEventType(LayerProperty.SOURCE), this.handleSourcePropertyChange_, this);
+    this.addEventListener(getChangeEventType(LayerProperty.SOURCE), this.handleSourcePropertyChange_);
 
     const source = options.source ? /** @type {SourceType} */ (options.source) : null;
     this.setSource(source);
@@ -156,6 +162,7 @@ class Layer extends BaseLayer {
   /**
    * @inheritDoc
    */
+  // @ts-ignore
   getSourceState() {
     const source = this.getSource();
     return !source ? SourceState.UNDEFINED : source.getState();

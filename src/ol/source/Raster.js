@@ -4,7 +4,6 @@
 import ImageCanvas from '../ImageCanvas.js';
 import TileQueue from '../TileQueue.js';
 import {createCanvasContext2D} from '../dom.js';
-import {listen} from '../events.js';
 import Event from '../events/Event.js';
 import EventType from '../events/EventType.js';
 import {Processor} from 'pixelworks/lib/index.js';
@@ -172,8 +171,9 @@ class RasterSource extends ImageSource {
      */
     this.layers_ = createLayers(options.sources);
 
+    const changed = this.changed.bind(this);
     for (let i = 0, ii = this.layers_.length; i < ii; ++i) {
-      listen(this.layers_[i], EventType.CHANGE, this.changed, this);
+      this.layers_[i].addEventListener(EventType.CHANGE, changed);
     }
 
     /**
@@ -212,7 +212,6 @@ class RasterSource extends ImageSource {
       animate: false,
       coordinateToPixelTransform: createTransform(),
       extent: null,
-      focus: null,
       index: 0,
       layerIndex: 0,
       layerStatesArray: getLayerStatesArray(this.layers_),
@@ -220,7 +219,6 @@ class RasterSource extends ImageSource {
       pixelToCoordinateTransform: createTransform(),
       postRenderFunctions: [],
       size: [0, 0],
-      skippedFeatureUids: {},
       tileQueue: this.tileQueue_,
       time: Date.now(),
       usedTiles: {},
@@ -287,7 +285,6 @@ class RasterSource extends ImageSource {
     const center = getCenter(extent);
 
     frameState.extent = extent.slice();
-    frameState.focus = center;
     frameState.size[0] = Math.round(getWidth(extent) / resolution);
     frameState.size[1] = Math.round(getHeight(extent) / resolution);
     frameState.time = Infinity;

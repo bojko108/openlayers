@@ -87,11 +87,11 @@ class DragRotateAndZoom extends PointerInteraction {
     const view = map.getView();
     if (this.lastAngle_ !== undefined) {
       const angleDelta = this.lastAngle_ - theta;
-      view.adjustRotation(angleDelta);
+      view.adjustRotationInternal(angleDelta);
     }
     this.lastAngle_ = theta;
     if (this.lastMagnitude_ !== undefined) {
-      view.adjustResolution(this.lastMagnitude_ / magnitude);
+      view.adjustResolutionInternal(this.lastMagnitude_ / magnitude);
     }
     if (this.lastMagnitude_ !== undefined) {
       this.lastScaleDelta_ = this.lastMagnitude_ / magnitude;

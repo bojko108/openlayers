@@ -1,4 +1,5 @@
 import Point from '../../../../src/ol/geom/Point.js';
+import {get as getProjection, getTransformFromProjections} from '../../../../src/ol/proj.js';
 
 
 describe('ol.geom.Point', function() {
@@ -150,6 +151,45 @@ describe('ol.geom.Point', function() {
       geom.scale(10, 15, [0, 0]);
       const coordinates = geom.getCoordinates();
       expect(coordinates).to.eql([10, 30]);
+    });
+
+  });
+
+  describe('#simplifyTransformed()', function() {
+
+    it('returns the same result if called twice with the same arguments', function() {
+      const geom = new Point([1, 2]);
+      const source = getProjection('EPSG:4326');
+      const dest = getProjection('EPSG:3857');
+      const transform = getTransformFromProjections(source, dest);
+      const squaredTolerance = 0.5;
+      const first = geom.simplifyTransformed(squaredTolerance, transform);
+      const second = geom.simplifyTransformed(squaredTolerance, transform);
+      expect(second).to.be(first);
+    });
+
+    it('returns a different result if called with a different tolerance', function() {
+      const geom = new Point([1, 2]);
+      const source = getProjection('EPSG:4326');
+      const dest = getProjection('EPSG:3857');
+      const transform = getTransformFromProjections(source, dest);
+      const squaredTolerance = 0.5;
+      const first = geom.simplifyTransformed(squaredTolerance, transform);
+      const second = geom.simplifyTransformed(squaredTolerance * 2, transform);
+      expect(second).not.to.be(first);
+    });
+
+    it('returns a different result if called after geometry modification', function() {
+      const geom = new Point([1, 2]);
+      const source = getProjection('EPSG:4326');
+      const dest = getProjection('EPSG:3857');
+      const transform = getTransformFromProjections(source, dest);
+      const squaredTolerance = 0.5;
+      const first = geom.simplifyTransformed(squaredTolerance, transform);
+
+      geom.setCoordinates([3, 4]);
+      const second = geom.simplifyTransformed(squaredTolerance * 2, transform);
+      expect(second).not.to.be(first);
     });
 
   });

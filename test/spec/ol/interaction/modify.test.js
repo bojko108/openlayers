@@ -3,7 +3,6 @@ import Feature from '../../../../src/ol/Feature.js';
 import Map from '../../../../src/ol/Map.js';
 import MapBrowserPointerEvent from '../../../../src/ol/MapBrowserPointerEvent.js';
 import View from '../../../../src/ol/View.js';
-import {getListeners} from '../../../../src/ol/events.js';
 import {doubleClick} from '../../../../src/ol/events/condition.js';
 import Circle from '../../../../src/ol/geom/Circle.js';
 import LineString from '../../../../src/ol/geom/LineString.js';
@@ -11,8 +10,9 @@ import Point from '../../../../src/ol/geom/Point.js';
 import Polygon from '../../../../src/ol/geom/Polygon.js';
 import Modify, {ModifyEvent} from '../../../../src/ol/interaction/Modify.js';
 import VectorLayer from '../../../../src/ol/layer/Vector.js';
-import PointerEvent from '../../../../src/ol/pointer/PointerEvent.js';
 import VectorSource from '../../../../src/ol/source/Vector.js';
+import Event from '../../../../src/ol/events/Event.js';
+import {getValues} from '../../../../src/ol/obj.js';
 
 
 describe('ol.interaction.Modify', function() {
@@ -81,19 +81,17 @@ describe('ol.interaction.Modify', function() {
     const viewport = map.getViewport();
     // calculated in case body has top < 0 (test runner with small window)
     const position = viewport.getBoundingClientRect();
-    const pointerEvent = new PointerEvent(type, {
-      type: type,
-      clientX: position.left + x + width / 2,
-      clientY: position.top + y + height / 2,
-      shiftKey: modifiers.shift || false,
-      altKey: modifiers.alt || false,
-      preventDefault: function() {}
-    }, {
-      button: button,
-      isPrimary: true
-    });
+    const pointerEvent = new Event();
+    pointerEvent.type = type;
+    pointerEvent.clientX = position.left + x + width / 2;
+    pointerEvent.clientY = position.top + y + height / 2;
+    pointerEvent.shiftKey = modifiers.shift || false;
+    pointerEvent.altKey = modifiers.alt || false;
+    pointerEvent.pointerId = 1;
+    pointerEvent.preventDefault = function() {};
+    pointerEvent.button = button;
+    pointerEvent.isPrimary = true;
     const event = new MapBrowserPointerEvent(type, map, pointerEvent);
-    event.pointerEvent.pointerId = 1;
     map.handleMapBrowserEvent(event);
   }
 
@@ -609,10 +607,10 @@ describe('ol.interaction.Modify', function() {
 
     beforeEach(function() {
       getModifyListeners = function(feature, modify) {
-        const listeners = getListeners(
-          feature, 'change');
+        const listeners = feature.listeners_['change'];
+        const candidates = getValues(modify);
         return listeners.filter(function(listener) {
-          return listener.bindTo === modify;
+          return candidates.indexOf(listener) !== -1;
         });
       };
     });
@@ -710,7 +708,7 @@ describe('ol.interaction.Modify', function() {
       collection.remove(features[0]);
       expect(function() {
         simulateEvent('pointerup', -10, -10, null, 0);
-      }).to.not.throwError();
+      }).to.not.throwException();
     });
   });
 

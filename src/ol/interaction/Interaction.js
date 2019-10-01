@@ -108,10 +108,10 @@ class Interaction extends BaseObject {
  * @param {number=} opt_duration Duration.
  */
 export function pan(view, delta, opt_duration) {
-  const currentCenter = view.getCenter();
+  const currentCenter = view.getCenterInternal();
   if (currentCenter) {
     const center = [currentCenter[0] + delta[0], currentCenter[1] + delta[1]];
-    view.animate_({
+    view.animateInternal({
       duration: opt_duration !== undefined ? opt_duration : 250,
       easing: linear,
       center: view.getConstrainedCenter(center)
@@ -122,7 +122,7 @@ export function pan(view, delta, opt_duration) {
 /**
  * @param {import("../View.js").default} view View.
  * @param {number} delta Delta from previous zoom level.
- * @param {import("../coordinate.js").Coordinate=} opt_anchor Anchor coordinate.
+ * @param {import("../coordinate.js").Coordinate=} opt_anchor Anchor coordinate in the user projection.
  * @param {number=} opt_duration Duration.
  */
 export function zoomByDelta(view, delta, opt_anchor, opt_duration) {

@@ -59,6 +59,9 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
   constructor(layer) {
     super(layer);
 
+    /** @private */
+    this.boundHandleStyleImageChange_ = this.handleStyleImageChange_.bind(this);
+
     /**
      * @private
      * @type {CanvasRenderingContext2D}
@@ -112,7 +115,6 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
      * @type {import("../../transform.js").Transform}
      */
     this.tmpTransform_ = createTransform();
-
   }
 
   /**
@@ -355,7 +357,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
       const executorGroups = tile.executorGroups[getUid(layer)];
       for (let t = 0, tt = executorGroups.length; t < tt; ++t) {
         const executorGroup = executorGroups[t];
-        found = found || executorGroup.forEachFeatureAtCoordinate(coordinate, resolution, rotation, hitTolerance, {},
+        found = found || executorGroup.forEachFeatureAtCoordinate(coordinate, resolution, rotation, hitTolerance,
           /**
            * @param {import("../../Feature.js").FeatureLike} feature Feature.
            * @return {?} Callback result.
@@ -495,7 +497,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
             }
           }
         }
-        executorGroup.execute(context, transform, rotation, {}, hifi, replayTypes, declutterReplays);
+        executorGroup.execute(context, transform, rotation, hifi, replayTypes, declutterReplays);
         if (!declutterReplays && !clipped) {
           context.restore();
           clips.push(currentClip);
@@ -546,12 +548,12 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
       for (let i = 0, ii = styles.length; i < ii; ++i) {
         loading = renderFeature(
           executorGroup, feature, styles[i], squaredTolerance,
-          this.handleStyleImageChange_, this) || loading;
+          this.boundHandleStyleImageChange_) || loading;
       }
     } else {
       loading = renderFeature(
         executorGroup, feature, styles, squaredTolerance,
-        this.handleStyleImageChange_, this);
+        this.boundHandleStyleImageChange_);
     }
     return loading;
   }
@@ -615,7 +617,7 @@ class CanvasVectorTileLayerRenderer extends CanvasTileLayerRenderer {
     translateTransform(transform, -tileExtent[0], -tileExtent[3]);
     for (let i = 0, ii = executorGroups.length; i < ii; ++i) {
       const executorGroup = executorGroups[i];
-      executorGroup.execute(context, transform, 0, {}, true, IMAGE_REPLAYS[layer.getRenderMode()]);
+      executorGroup.execute(context, transform, 0, true, IMAGE_REPLAYS[layer.getRenderMode()]);
     }
     replayState.renderedTileResolution = tile.wantedResolution;
   }

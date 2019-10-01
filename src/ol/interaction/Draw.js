@@ -7,7 +7,6 @@ import MapBrowserEventType from '../MapBrowserEventType.js';
 import MapBrowserPointerEvent from '../MapBrowserPointerEvent.js';
 import {getChangeEventType} from '../Object.js';
 import {squaredDistance as squaredCoordinateDistance} from '../coordinate.js';
-import {listen} from '../events.js';
 import Event from '../events/Event.js';
 import {noModifierKeys, always, shiftKeyOnly} from '../events/condition.js';
 import {boundingExtent, getBottomLeft, getBottomRight, getTopLeft, getTopRight} from '../extent.js';
@@ -18,7 +17,6 @@ import LineString from '../geom/LineString.js';
 import MultiLineString from '../geom/MultiLineString.js';
 import MultiPoint from '../geom/MultiPoint.js';
 import MultiPolygon from '../geom/MultiPolygon.js';
-import {POINTER_TYPE} from '../pointer/MouseSource.js';
 import Point from '../geom/Point.js';
 import Polygon, {fromCircle, makeRegular} from '../geom/Polygon.js';
 import PointerInteraction from './Pointer.js';
@@ -419,8 +417,7 @@ class Draw extends PointerInteraction {
         useSpatialIndex: false,
         wrapX: options.wrapX ? options.wrapX : false
       }),
-      style: options.style ? options.style :
-        getDefaultStyleFunction(),
+      style: options.style ? options.style : getDefaultStyleFunction(),
       updateWhileInteracting: true
     });
 
@@ -445,13 +442,10 @@ class Draw extends PointerInteraction {
     if (options.freehand) {
       this.freehandCondition_ = always;
     } else {
-      this.freehandCondition_ = options.freehandCondition ?
-        options.freehandCondition : shiftKeyOnly;
+      this.freehandCondition_ = options.freehandCondition ? options.freehandCondition : shiftKeyOnly;
     }
 
-    listen(this,
-      getChangeEventType(InteractionProperty.ACTIVE),
-      this.updateState_, this);
+    this.addEventListener(getChangeEventType(InteractionProperty.ACTIVE), this.updateState_);
 
   }
 
@@ -511,7 +505,7 @@ class Draw extends PointerInteraction {
       pass = event.type === MapBrowserEventType.POINTERMOVE;
       if (pass && this.freehand_) {
         pass = this.handlePointerMove_(event);
-      } else if (/** @type {MapBrowserPointerEvent} */ (event).pointerEvent.pointerType == POINTER_TYPE ||
+      } else if (/** @type {MapBrowserPointerEvent} */ (event).pointerEvent.pointerType == 'mouse' ||
           (event.type === MapBrowserEventType.POINTERDRAG && this.downTimeout_ === undefined)) {
         this.handlePointerMove_(event);
       }

@@ -28,6 +28,15 @@ describe('ol.events.EventTarget', function() {
     it('creates an empty listeners_ object', function() {
       expect(Object.keys(eventTarget.listeners_)).to.have.length(0);
     });
+    it('accepts a default target', function(done) {
+      const defaultTarget = {};
+      const target = new EventTarget(defaultTarget);
+      target.addEventListener('my-event', function(event) {
+        expect(event.target).to.eql(defaultTarget);
+        done();
+      });
+      target.dispatchEvent('my-event');
+    });
   });
 
   describe('#hasListener', function() {
@@ -42,16 +51,6 @@ describe('ol.events.EventTarget', function() {
       expect(eventTarget.hasListener('bar')).to.be(false);
     });
   });
-
-  describe('#getListeners', function() {
-    it('returns listeners for a type or undefined if none', function() {
-      expect(eventTarget.getListeners('foo')).to.be(undefined);
-      const listeners = [function() {}];
-      eventTarget.listeners_['foo'] = listeners;
-      expect(eventTarget.getListeners('foo')).to.equal(listeners);
-    });
-  });
-
 
   describe('#addEventListener()', function() {
     it('has listeners for each registered type', function() {
@@ -72,7 +71,15 @@ describe('ol.events.EventTarget', function() {
       eventTarget.addEventListener('foo', spy1);
       eventTarget.addEventListener('foo', spy2);
       eventTarget.removeEventListener('foo', spy1, false);
-      expect(eventTarget.getListeners('foo')).to.have.length(1);
+      expect(eventTarget.listeners_['foo']).to.have.length(1);
+    });
+    it('does not remove listeners when the specified listener is not found', function() {
+      eventTarget.addEventListener('foo', spy1);
+      eventTarget.addEventListener('foo', spy2);
+      eventTarget.removeEventListener('foo', undefined);
+      eventTarget.removeEventListener('foo', spy2);
+      eventTarget.removeEventListener('foo', spy2);
+      expect(eventTarget.listeners_['foo']).to.eql([spy1]);
     });
   });
 
@@ -131,7 +138,7 @@ describe('ol.events.EventTarget', function() {
         eventTarget.dispatchEvent('foo');
       }).not.to.throwException();
       expect(called).to.eql([3]);
-      expect(eventTarget.getListeners('foo')).to.have.length(1);
+      expect(eventTarget.listeners_['foo']).to.have.length(1);
     });
     it('is safe to do weird things in listeners', function() {
       eventTarget.addEventListener('foo', spy2);
@@ -148,7 +155,7 @@ describe('ol.events.EventTarget', function() {
         eventTarget.dispatchEvent('foo');
       }).not.to.throwException();
       expect(called).to.eql([2, 2]);
-      expect(eventTarget.getListeners('foo')).to.be(undefined);
+      expect(eventTarget.listeners_['foo']).to.be(undefined);
     });
   });
 

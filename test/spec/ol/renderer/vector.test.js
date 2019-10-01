@@ -1,5 +1,4 @@
 import {VOID} from '../../../../src/ol/functions.js';
-import {getListeners} from '../../../../src/ol/events.js';
 import LineString from '../../../../src/ol/geom/LineString.js';
 import Point from '../../../../src/ol/geom/Point.js';
 import Polygon from '../../../../src/ol/geom/Polygon.js';
@@ -18,7 +17,7 @@ import Feature from '../../../../src/ol/Feature.js';
 describe('ol.renderer.vector', function() {
   describe('#renderFeature', function() {
     let builderGroup;
-    let feature, iconStyle, style, squaredTolerance, listener, listenerThis;
+    let feature, iconStyle, style, squaredTolerance, listener;
     let iconStyleLoadSpy;
 
     beforeEach(function() {
@@ -34,7 +33,6 @@ describe('ol.renderer.vector', function() {
       });
       squaredTolerance = 1;
       listener = function() {};
-      listenerThis = {};
       iconStyleLoadSpy = sinon.stub(iconStyle, 'load').callsFake(function() {
         iconStyle.iconImage_.imageState_ = 1; // LOADING
       });
@@ -50,21 +48,17 @@ describe('ol.renderer.vector', function() {
         let listeners;
 
         // call #1
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
 
         expect(iconStyleLoadSpy.calledOnce).to.be.ok();
-        listeners = getListeners(
-          iconStyle.iconImage_, 'change');
+        listeners = iconStyle.iconImage_.listeners_['change'];
         expect(listeners.length).to.eql(1);
 
         // call #2
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
 
         expect(iconStyleLoadSpy.calledOnce).to.be.ok();
-        listeners = getListeners(
-          iconStyle.iconImage_, 'change');
+        listeners = iconStyle.iconImage_.listeners_['change'];
         expect(listeners.length).to.eql(1);
       });
 
@@ -78,8 +72,7 @@ describe('ol.renderer.vector', function() {
           style.getZIndex(), 'Image');
         const setImageStyleSpy = sinon.spy(imageReplay, 'setImageStyle');
         const drawPointSpy = sinon.stub(imageReplay, 'drawPoint').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setImageStyleSpy.called).to.be(false);
         setImageStyleSpy.restore();
         drawPointSpy.restore();
@@ -91,8 +84,7 @@ describe('ol.renderer.vector', function() {
           style.getZIndex(), 'Image');
         const setImageStyleSpy = sinon.spy(imageReplay, 'setImageStyle');
         const drawMultiPointSpy = sinon.stub(imageReplay, 'drawMultiPoint').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setImageStyleSpy.called).to.be(false);
         setImageStyleSpy.restore();
         drawMultiPointSpy.restore();
@@ -105,8 +97,7 @@ describe('ol.renderer.vector', function() {
         const setFillStrokeStyleSpy = sinon.spy(lineStringReplay,
           'setFillStrokeStyle');
         const drawLineStringSpy = sinon.stub(lineStringReplay, 'drawLineString').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setFillStrokeStyleSpy.called).to.be(true);
         expect(drawLineStringSpy.called).to.be(true);
         setFillStrokeStyleSpy.restore();
@@ -120,8 +111,7 @@ describe('ol.renderer.vector', function() {
         const setFillStrokeStyleSpy = sinon.spy(lineStringReplay,
           'setFillStrokeStyle');
         const drawMultiLineStringSpy = sinon.stub(lineStringReplay, 'drawMultiLineString').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setFillStrokeStyleSpy.called).to.be(true);
         expect(drawMultiLineStringSpy.called).to.be(true);
         setFillStrokeStyleSpy.restore();
@@ -136,8 +126,7 @@ describe('ol.renderer.vector', function() {
         const setFillStrokeStyleSpy = sinon.spy(polygonReplay,
           'setFillStrokeStyle');
         const drawPolygonSpy = sinon.stub(polygonReplay, 'drawPolygon').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setFillStrokeStyleSpy.called).to.be(true);
         expect(drawPolygonSpy.called).to.be(true);
         setFillStrokeStyleSpy.restore();
@@ -152,8 +141,7 @@ describe('ol.renderer.vector', function() {
         const setFillStrokeStyleSpy = sinon.spy(polygonReplay,
           'setFillStrokeStyle');
         const drawMultiPolygonSpy = sinon.stub(polygonReplay, 'drawMultiPolygon').callsFake(VOID);
-        renderFeature(builderGroup, feature,
-          style, squaredTolerance, listener, listenerThis);
+        renderFeature(builderGroup, feature, style, squaredTolerance, listener);
         expect(setFillStrokeStyleSpy.called).to.be(true);
         expect(drawMultiPolygonSpy.called).to.be(true);
         setFillStrokeStyleSpy.restore();

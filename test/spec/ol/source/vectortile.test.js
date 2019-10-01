@@ -5,7 +5,7 @@ import VectorTile from '../../../../src/ol/VectorTile.js';
 import GeoJSON from '../../../../src/ol/format/GeoJSON.js';
 import MVT from '../../../../src/ol/format/MVT.js';
 import VectorTileLayer from '../../../../src/ol/layer/VectorTile.js';
-import {get as getProjection} from '../../../../src/ol/proj.js';
+import {get as getProjection, get} from '../../../../src/ol/proj.js';
 import VectorTileSource from '../../../../src/ol/source/VectorTile.js';
 import {createXYZ} from '../../../../src/ol/tilegrid.js';
 import TileGrid from '../../../../src/ol/tilegrid/TileGrid.js';
@@ -14,12 +14,14 @@ import TileState from '../../../../src/ol/TileState.js';
 
 describe('ol.source.VectorTile', function() {
 
-  const format = new MVT();
-  const source = new VectorTileSource({
-    format: format,
-    url: 'spec/ol/data/{z}-{x}-{y}.vector.pbf'
+  let format, source;
+  beforeEach(function() {
+    format = new MVT();
+    source = new VectorTileSource({
+      format: format,
+      url: 'spec/ol/data/{z}-{x}-{y}.vector.pbf'
+    });
   });
-  let tile;
 
   describe('constructor', function() {
     it('sets the format on the instance', function() {
@@ -44,15 +46,9 @@ describe('ol.source.VectorTile', function() {
   describe('#getTile()', function() {
 
     it('creates a tile with the correct tile class', function() {
-      tile = source.getTile(0, 0, 0, 1, getProjection('EPSG:3857'));
+      const tile = source.getTile(0, 0, 0, 1, getProjection('EPSG:3857'));
       expect(tile).to.be.a(VectorRenderTile);
-    });
-
-    it('sets the correct tileCoord on the created tile', function() {
       expect(tile.getTileCoord()).to.eql([0, 0, 0]);
-    });
-
-    it('fetches tile from cache when requested again', function() {
       expect(source.getTile(0, 0, 0, 1, getProjection('EPSG:3857')))
         .to.equal(tile);
     });
@@ -75,19 +71,61 @@ describe('ol.source.VectorTile', function() {
       });
     });
 
-    it('handles empty tiles tiles', function(done) {
+    it('handles empty tiles', function() {
       const source = new VectorTileSource({
         format: new GeoJSON(),
         url: ''
       });
       const tile = source.getTile(0, 0, 0, 1, source.getProjection());
+      expect(tile.getState()).to.be(TileState.EMPTY);
+    });
 
-      const key = listen(tile, 'change', function(e) {
-        unlistenByKey(key);
-        expect(tile.getState()).to.be(TileState.EMPTY);
-        done();
+    it('creates empty tiles outside the source extent', function() {
+      const fullExtent = get('EPSG:3857').getExtent();
+      const source = new VectorTileSource({
+        extent: [fullExtent[0], fullExtent[1], 0, 0]
       });
+      const tile = source.getTile(1, 1, 1, 1, source.getProjection());
+      expect(tile.getState()).to.be(TileState.EMPTY);
+    });
+
+    it('creates empty tiles outside the world extent when wrapX === false', function() {
+      const source = new VectorTileSource({
+        wrapX: false
+      });
+      const tile = source.getTile(0, -1, 0, 1, source.getProjection());
+      expect(tile.getState()).to.be(TileState.EMPTY);
+    });
+
+    it('creates empty tiles when the tileUrlFunction returns undefined', function() {
+      const source = new VectorTileSource({
+        tileUrlFunction: function(tileCoord) {
+          return;
+        }
+      });
+      const tile = source.getTile(1, 1, 1, 1, source.getProjection());
+      expect(tile.getState()).to.be(TileState.EMPTY);
+    });
+
+    it('creates non-empty tiles outside the world extent when wrapX === true', function() {
+      const source = new VectorTileSource({
+        url: '{z}/{x}/{y}.pbf'
+      });
+      const tile = source.getTile(0, -1, 0, 1, source.getProjection());
+      expect(tile.getState()).to.be(TileState.IDLE);
+    });
+
+    it('creates non-empty tiles for overzoomed resolutions', function() {
+      const source = new VectorTileSource({
+        url: '{z}/{x}/{y}.pbf',
+        tileLoadFunction: function(tile) {
+          tile.setLoader(function() {});
+        },
+        maxZoom: 16
+      });
+      const tile = source.getTile(24, 9119385, 5820434, 1, source.getProjection());
       tile.load();
+      expect(tile.getState()).to.be(TileState.LOADING);
     });
 
     it('creates new tile when source key changes', function() {
@@ -112,7 +150,7 @@ describe('ol.source.VectorTile', function() {
 
   describe('Tile load events', function() {
     it('triggers tileloadstart and tileloadend with ol.VectorTile', function(done) {
-      tile = source.getTile(14, 8938, 5680, 1, getProjection('EPSG:3857'));
+      const tile = source.getTile(14, 8938, 5680, 1, getProjection('EPSG:3857'));
       let started = false;
       source.on('tileloadstart', function() {
         started = true;
@@ -190,6 +228,68 @@ describe('ol.source.VectorTile', function() {
         expect(loaded).to.eql(['5/13/-29']);
         done();
       }, 0);
+    });
+
+  });
+
+  it('does not fill up the tile queue', function(done) {
+    const target = document.createElement('div');
+    target.style.width = '100px';
+    target.style.height = '100px';
+    document.body.appendChild(target);
+
+    const urls = [
+      'spec/ol/data/14-8938-5680.vector.pbf?num=0&coord={z},{x},{y}',
+      'spec/ol/data/14-8938-5680.vector.pbf?num=1&coord={z},{x},{y}',
+      'spec/ol/data/14-8938-5680.vector.pbf?num=2&coord={z},{x},{y}',
+      'spec/ol/data/14-8938-5680.vector.pbf?num=3&coord={z},{x},{y}'
+    ];
+
+    const source = new VectorTileSource({
+      format: new MVT(),
+      url: urls[0]
+    });
+
+    const map = new Map({
+      target: target,
+      layers: [
+        new VectorTileLayer({
+          source: source
+        })
+      ],
+      view: new View({
+        center: [0, 0],
+        zoom: 0
+      })
+    });
+    map.renderSync();
+
+
+    const max = urls.length + 3;
+    let count = 0;
+    let tile = source.getTile(0, 0, 0, 1, map.getView().getProjection());
+    tile.addEventListener('change', function onTileChange(e) {
+      if (e.target.getState() !== TileState.LOADED && !e.target.hifi) {
+        return;
+      }
+      e.target.removeEventListener('change', onTileChange);
+
+      map.once('rendercomplete', function() {
+        expect(map.tileQueue_.getTilesLoading()).to.be(0);
+
+        ++count;
+        if (count === max) {
+          document.body.removeChild(target);
+          map.dispose();
+          done();
+          return;
+        }
+
+        source.setUrl(urls[count % urls.length]);
+        tile = source.getTile(0, 0, 0, 1, map.getView().getProjection());
+        tile.addEventListener('change', onTileChange);
+      });
+
     });
 
   });

@@ -2,21 +2,6 @@
 
 describe('expect.js', function() {
 
-  describe('arreqlNaN', function() {
-
-    it('considers NaN in array to be equal', function() {
-      expect([1, NaN, 2]).to.arreqlNaN([1, NaN, 2]);
-      expect([1, NaN, 2]).not.to.arreqlNaN([1, 1.5, 2]);
-    });
-
-    it('allows a mix of number and string', function() {
-      expect([1, NaN, 'foo']).to.arreqlNaN([1, NaN, 'foo']);
-      expect([1, NaN, 'foo']).not.to.arreqlNaN([1, NaN, 'bar']);
-      expect([1, NaN]).not.to.arreqlNaN([1, 'foo']);
-    });
-
-  });
-
   describe('roughlyEqual', function() {
 
     it('can tell the difference between 1 and 3', function() {
@@ -39,38 +24,6 @@ describe('expect.js', function() {
           expect(1).to.roughlyEqual(2, 1);
         }).not.to.throwException();
       });
-
-  });
-
-  describe('called', function() {
-
-    let telephone;
-    beforeEach(function() {
-      telephone = sinon.spy();
-    });
-
-    it('has caller ID', function() {
-      telephone();
-      expect(telephone).to.be.called();
-    });
-
-    it('also knows when it\'s speaking to the hand', function() {
-      (function() {})();
-      expect(telephone).not.to.be.called();
-    });
-
-    it('reminds you that you forgot', function() {
-      expect(function() {
-        expect(telephone).to.be.called();
-      }).to.throwException();
-    });
-
-    it('gets moody all too quickly', function() {
-      telephone();
-      expect(function() {
-        expect(telephone).not.to.be.called();
-      }).to.throwException();
-    });
 
   });
 

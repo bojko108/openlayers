@@ -2,6 +2,7 @@
  * @module ol/renderer/canvas/TileLayer
  */
 import {getUid} from '../../util.js';
+import {fromUserExtent} from '../../proj.js';
 import TileRange from '../../TileRange.js';
 import TileState from '../../TileState.js';
 import {createEmpty, equals, getIntersection, getTopLeft} from '../../extent.js';
@@ -71,7 +72,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
    * @return {boolean} Tile is drawable.
    */
   isDrawableTile(tile) {
-    const tileLayer = /** @type {import("../../layer/Tile.js").default} */ (this.getLayer());
+    const tileLayer = this.getLayer();
     const tileState = tile.getState();
     const useInterimTilesOnError = tileLayer.getUseInterimTilesOnError();
     return tileState == TileState.LOADED ||
@@ -89,7 +90,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
   getTile(z, x, y, frameState) {
     const pixelRatio = frameState.pixelRatio;
     const projection = frameState.viewState.projection;
-    const tileLayer = /** @type {import("../../layer/Tile.js").default} */ (this.getLayer());
+    const tileLayer = this.getLayer();
     const tileSource = tileLayer.getSource();
     let tile = tileSource.getTile(z, x, y, pixelRatio, projection);
     if (tile.getState() == TileState.ERROR) {
@@ -121,7 +122,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
    * @inheritDoc
    */
   prepareFrame(frameState) {
-    return true;
+    return !!this.getLayer().getSource();
   }
 
   /**
@@ -141,16 +142,17 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
     const rotation = viewState.rotation;
     const pixelRatio = frameState.pixelRatio;
 
-    const tileLayer = /** @type {import("../../layer/Tile.js").default} */ (this.getLayer());
+    const tileLayer = this.getLayer();
     const tileSource = tileLayer.getSource();
     const sourceRevision = tileSource.getRevision();
     const tileGrid = tileSource.getTileGridForProjection(projection);
     const z = tileGrid.getZForResolution(viewResolution, tileSource.zDirection);
     const tileResolution = tileGrid.getResolution(z);
-    let extent = frameState.extent;
 
-    if (layerState.extent) {
-      extent = getIntersection(extent, layerState.extent);
+    let extent = frameState.extent;
+    const layerExtent = layerState.extent && fromUserExtent(layerState.extent, projection);
+    if (layerExtent) {
+      extent = getIntersection(extent, fromUserExtent(layerState.extent, projection));
     }
 
     const tilePixelRatio = tileSource.getTilePixelRatio(pixelRatio);
@@ -249,8 +251,8 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       context.clearRect(0, 0, width, height);
     }
 
-    if (layerState.extent) {
-      this.clipUnrotated(context, frameState, layerState.extent);
+    if (layerExtent) {
+      this.clipUnrotated(context, frameState, layerExtent);
     }
 
     this.preRender(context, frameState);
@@ -283,7 +285,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       const tileGutter = tilePixelRatio * tileSource.getGutterForProjection(projection);
       const tilesToDraw = tilesToDrawByZ[currentZ];
       for (const tileCoordKey in tilesToDraw) {
-        const tile = tilesToDraw[tileCoordKey];
+        const tile = /** @type {import("../../ImageTile.js").default} */ (tilesToDraw[tileCoordKey]);
         const tileCoord = tile.tileCoord;
 
         // Calculate integer positions and sizes so that tiles align
@@ -361,7 +363,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
   }
 
   /**
-   * @param {import("../../Tile.js").default} tile Tile.
+   * @param {import("../../ImageTile.js").default} tile Tile.
    * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
    * @param {number} x Left of the tile.
    * @param {number} y Top of the tile.
@@ -377,7 +379,8 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       return;
     }
     const uid = getUid(this);
-    const alpha = opacity * (transition ? tile.getAlpha(uid, frameState.time) : 1);
+    const tileAlpha = transition ? tile.getAlpha(uid, frameState.time) : 1;
+    const alpha = opacity * tileAlpha;
     const alphaChanged = alpha !== this.context.globalAlpha;
     if (alphaChanged) {
       this.context.save();
@@ -389,7 +392,7 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
     if (alphaChanged) {
       this.context.restore();
     }
-    if (alpha !== 1) {
+    if (tileAlpha !== 1) {
       frameState.animate = true;
     } else if (transition) {
       tile.endTransition(uid);
@@ -406,12 +409,12 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
 
   /**
    * Get the image from a tile.
-   * @param {import("../../Tile.js").default} tile Tile.
+   * @param {import("../../ImageTile.js").default} tile Tile.
    * @return {HTMLCanvasElement|HTMLImageElement|HTMLVideoElement} Image.
    * @protected
    */
   getTileImage(tile) {
-    return /** @type {import("../../ImageTile.js").default} */ (tile).getImage();
+    return tile.getImage();
   }
 
   /**

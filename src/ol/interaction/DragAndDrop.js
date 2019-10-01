@@ -115,7 +115,7 @@ class DragAndDrop extends Interaction {
 
     /**
      * @private
-     * @type {Array<import("../events.js").EventsKey>}
+     * @type {?Array<import("../events.js").EventsKey>}
      */
     this.dropListenKeys_ = null;
 
@@ -188,12 +188,13 @@ class DragAndDrop extends Interaction {
    * @inheritDoc
    */
   setActive(active) {
-    super.setActive(active);
-    if (active) {
+    if (!this.getActive() && active) {
       this.registerListeners_();
-    } else {
+    }
+    if (this.getActive() && !active) {
       this.unregisterListeners_();
     }
+    super.setActive(active);
   }
 
   /**

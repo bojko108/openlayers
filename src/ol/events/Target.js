@@ -2,9 +2,9 @@
  * @module ol/events/Target
  */
 import Disposable from '../Disposable.js';
-import {unlistenAll} from '../events.js';
 import {VOID} from '../functions.js';
 import Event from './Event.js';
+import {clear} from '../obj.js';
 
 
 /**
@@ -28,9 +28,19 @@ import Event from './Event.js';
  *    returns false.
  */
 class Target extends Disposable {
-  constructor() {
+
+  /**
+   * @param {*=} opt_target Default event target for dispatched events.
+   */
+  constructor(opt_target) {
 
     super();
+
+    /**
+     * @private
+     * @type {*}
+     */
+    this.target_ = opt_target;
 
     /**
      * @private
@@ -57,6 +67,9 @@ class Target extends Disposable {
    * @param {import("../events.js").ListenerFunction} listener Listener.
    */
   addEventListener(type, listener) {
+    if (!type || !listener) {
+      return;
+    }
     let listeners = this.listeners_[type];
     if (!listeners) {
       listeners = this.listeners_[type] = [];
@@ -82,7 +95,9 @@ class Target extends Disposable {
   dispatchEvent(event) {
     const evt = typeof event === 'string' ? new Event(event) : event;
     const type = evt.type;
-    evt.target = this;
+    if (!evt.target) {
+      evt.target = this.target_ || this;
+    }
     const listeners = this.listeners_[type];
     let propagate;
     if (listeners) {
@@ -114,7 +129,7 @@ class Target extends Disposable {
    * @inheritDoc
    */
   disposeInternal() {
-    unlistenAll(this);
+    clear(this.listeners_);
   }
 
   /**
@@ -147,14 +162,16 @@ class Target extends Disposable {
     const listeners = this.listeners_[type];
     if (listeners) {
       const index = listeners.indexOf(listener);
-      if (type in this.pendingRemovals_) {
-        // make listener a no-op, and remove later in #dispatchEvent()
-        listeners[index] = VOID;
-        ++this.pendingRemovals_[type];
-      } else {
-        listeners.splice(index, 1);
-        if (listeners.length === 0) {
-          delete this.listeners_[type];
+      if (index !== -1) {
+        if (type in this.pendingRemovals_) {
+          // make listener a no-op, and remove later in #dispatchEvent()
+          listeners[index] = VOID;
+          ++this.pendingRemovals_[type];
+        } else {
+          listeners.splice(index, 1);
+          if (listeners.length === 0) {
+            delete this.listeners_[type];
+          }
         }
       }
     }

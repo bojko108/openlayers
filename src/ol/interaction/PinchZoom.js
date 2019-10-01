@@ -91,11 +91,11 @@ class PinchZoom extends PointerInteraction {
     const centroid = centroidFromPointers(this.targetPointers);
     centroid[0] -= viewportPosition.left;
     centroid[1] -= viewportPosition.top;
-    this.anchor_ = map.getCoordinateFromPixel(centroid);
+    this.anchor_ = map.getCoordinateFromPixelInternal(centroid);
 
     // scale, bypass the resolution constraint
     map.render();
-    view.adjustResolution(scaleDelta, this.anchor_);
+    view.adjustResolutionInternal(scaleDelta, this.anchor_);
   }
 
   /**

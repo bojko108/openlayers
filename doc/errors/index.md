@@ -236,3 +236,16 @@ A `WebGLArrayBuffer` must either be of type `ELEMENT_ARRAY_BUFFER` or `ARRAY_BUF
 ### 63
 
 Support for the `OES_element_index_uint` WebGL extension is mandatory for WebGL layers.
+
+### 64
+
+Layer opacity must be a number.
+
+### 65
+
+A symbol literal representation must be defined on the style supplied to a `WebGLPointsLayer` instance.
+
+### 66
+
+`forEachFeatureAtCoordinate` cannot be used on a WebGL layer if the hit detection logic has not been enabled.
+This is done by providing adequate shaders using the `hitVertexShader` and `hitFragmentShader` properties of `WebGLPointsLayerRenderer`.

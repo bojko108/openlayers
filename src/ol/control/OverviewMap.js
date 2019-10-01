@@ -11,12 +11,12 @@ import Overlay from '../Overlay.js';
 import OverlayPositioning from '../OverlayPositioning.js';
 import ViewProperty from '../ViewProperty.js';
 import Control from './Control.js';
-import {rotate as rotateCoordinate, add as addCoordinate} from '../coordinate.js';
+import {fromExtent as polygonFromExtent} from '../geom/Polygon.js';
 import {CLASS_CONTROL, CLASS_UNSELECTABLE, CLASS_COLLAPSED} from '../css.js';
 import {replaceNode} from '../dom.js';
-import {listen, listenOnce, unlisten} from '../events.js';
+import {listen, listenOnce} from '../events.js';
 import EventType from '../events/EventType.js';
-import {containsExtent, getBottomLeft, getBottomRight, getTopLeft, getTopRight, scaleFromCenter} from '../extent.js';
+import {containsExtent, equals as equalsExtent, getBottomRight, getTopLeft, scaleFromCenter} from '../extent.js';
 
 
 /**
@@ -55,6 +55,7 @@ class ControlledMap extends PluggableMap {
  * Layers for the overview map.
  * @property {function(import("../MapEvent.js").default)} [render] Function called when the control
  * should be re-rendered. This is called in a `requestAnimationFrame` callback.
+ * @property {boolean} [rotateWithView=false] Whether the control view should rotate with the main map view.
  * @property {HTMLElement|string} [target] Specify a target if you want the control
  * to be rendered outside of the map's viewport.
  * @property {string} [tipLabel='Overview map'] Text label to use for the button tip.
@@ -64,7 +65,7 @@ class ControlledMap extends PluggableMap {
 
 
 /**
- * Create a new control with a map acting as an overview map for an other
+ * Create a new control with a map acting as an overview map for another
  * defined map.
  *
  * @api
@@ -85,6 +86,11 @@ class OverviewMap extends Control {
     });
 
     /**
+     * @private
+     */
+    this.boundHandleRotationChanged_ = this.handleRotationChanged_.bind(this);
+
+    /**
      * @type {boolean}
      * @private
      */
@@ -100,6 +106,19 @@ class OverviewMap extends Control {
     if (!this.collapsible_) {
       this.collapsed_ = false;
     }
+
+    /**
+     * @private
+     * @type {boolean}
+     */
+    this.rotateWithView_ = options.rotateWithView !== undefined ?
+      options.rotateWithView : false;
+
+    /**
+     * @private
+     * @type {import("../extent.js").Extent|undefined}
+     */
+    this.viewExtent_ = undefined;
 
     const className = options.className !== undefined ? options.className : 'ol-overviewmap';
 
@@ -139,8 +158,7 @@ class OverviewMap extends Control {
     button.title = tipLabel;
     button.appendChild(activeLabel);
 
-    listen(button, EventType.CLICK,
-      this.handleClick_, this);
+    button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
 
     /**
      * @type {HTMLElement}
@@ -174,7 +192,7 @@ class OverviewMap extends Control {
      */
     this.boxOverlay_ = new Overlay({
       position: [0, 0],
-      positioning: OverlayPositioning.BOTTOM_LEFT,
+      positioning: OverlayPositioning.CENTER_CENTER,
       element: box
     });
     this.ovmap_.addOverlay(this.boxOverlay_);
@@ -205,15 +223,15 @@ class OverviewMap extends Control {
 
     const move = function(event) {
       const position = /** @type {?} */ (computeDesiredMousePosition(event));
-      const coordinates = ovmap.getEventCoordinate(/** @type {Event} */ (position));
+      const coordinates = ovmap.getEventCoordinateInternal(/** @type {Event} */ (position));
 
       overlay.setPosition(coordinates);
     };
 
     const endMoving = function(event) {
-      const coordinates = ovmap.getEventCoordinate(event);
+      const coordinates = ovmap.getEventCoordinateInternal(event);
 
-      scope.getMap().getView().setCenter(coordinates);
+      scope.getMap().getView().setCenterInternal(coordinates);
 
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', endMoving);
@@ -225,6 +243,7 @@ class OverviewMap extends Control {
       window.addEventListener('mousemove', move);
       window.addEventListener('mouseup', endMoving);
     });
+
   }
 
   /**
@@ -284,9 +303,7 @@ class OverviewMap extends Control {
    * @private
    */
   bindView_(view) {
-    listen(view,
-      getChangeEventType(ViewProperty.ROTATION),
-      this.handleRotationChanged_, this);
+    view.addEventListener(getChangeEventType(ViewProperty.ROTATION), this.boundHandleRotationChanged_);
   }
 
   /**
@@ -295,19 +312,17 @@ class OverviewMap extends Control {
    * @private
    */
   unbindView_(view) {
-    unlisten(view,
-      getChangeEventType(ViewProperty.ROTATION),
-      this.handleRotationChanged_, this);
+    view.removeEventListener(getChangeEventType(ViewProperty.ROTATION), this.boundHandleRotationChanged_);
   }
 
   /**
    * Handle rotation changes to the main map.
-   * TODO: This should rotate the extent rectrangle instead of the
-   * overview map's view.
    * @private
    */
   handleRotationChanged_() {
-    this.ovmap_.getView().setRotation(this.getMap().getView().getRotation());
+    if (this.rotateWithView_) {
+      this.ovmap_.getView().setRotation(this.getMap().getView().getRotation());
+    }
   }
 
   /**
@@ -332,17 +347,23 @@ class OverviewMap extends Control {
     const mapSize = /** @type {import("../size.js").Size} */ (map.getSize());
 
     const view = map.getView();
-    const extent = view.calculateExtent(mapSize);
+    const extent = view.calculateExtentInternal(mapSize);
+
+    if (this.viewExtent_ && equalsExtent(extent, this.viewExtent_)) {
+      // repeats of the same extent may indicate constraint conflicts leading to an endless cycle
+      return;
+    }
+    this.viewExtent_ = extent;
 
     const ovmapSize = /** @type {import("../size.js").Size} */ (ovmap.getSize());
 
     const ovview = ovmap.getView();
-    const ovextent = ovview.calculateExtent(ovmapSize);
+    const ovextent = ovview.calculateExtentInternal(ovmapSize);
 
     const topLeftPixel =
-        ovmap.getPixelFromCoordinate(getTopLeft(extent));
+        ovmap.getPixelFromCoordinateInternal(getTopLeft(extent));
     const bottomRightPixel =
-        ovmap.getPixelFromCoordinate(getBottomRight(extent));
+        ovmap.getPixelFromCoordinateInternal(getBottomRight(extent));
 
     const boxWidth = Math.abs(topLeftPixel[0] - bottomRightPixel[0]);
     const boxHeight = Math.abs(topLeftPixel[1] - bottomRightPixel[1]);
@@ -376,7 +397,7 @@ class OverviewMap extends Control {
     const mapSize = /** @type {import("../size.js").Size} */ (map.getSize());
 
     const view = map.getView();
-    const extent = view.calculateExtent(mapSize);
+    const extent = view.calculateExtentInternal(mapSize);
 
     const ovview = ovmap.getView();
 
@@ -387,7 +408,7 @@ class OverviewMap extends Control {
       MAX_RATIO / MIN_RATIO) / Math.LN2;
     const ratio = 1 / (Math.pow(2, steps / 2) * MIN_RATIO);
     scaleFromCenter(extent, ratio);
-    ovview.fit(extent);
+    ovview.fitInternal(polygonFromExtent(extent));
   }
 
   /**
@@ -403,7 +424,7 @@ class OverviewMap extends Control {
 
     const ovview = ovmap.getView();
 
-    ovview.setCenter(view.getCenter());
+    ovview.setCenterInternal(view.getCenterInternal());
   }
 
   /**
@@ -424,49 +445,26 @@ class OverviewMap extends Control {
 
     const ovview = ovmap.getView();
 
-    const rotation = view.getRotation();
+    const rotation = this.rotateWithView_ ? 0 : -view.getRotation();
 
     const overlay = this.boxOverlay_;
     const box = this.boxOverlay_.getElement();
-    const extent = view.calculateExtent(mapSize);
+    const center = view.getCenterInternal();
+    const resolution = view.getResolution();
     const ovresolution = ovview.getResolution();
-    const bottomLeft = getBottomLeft(extent);
-    const topRight = getTopRight(extent);
+    const width = mapSize[0] * resolution / ovresolution;
+    const height = mapSize[1] * resolution / ovresolution;
 
-    // set position using bottom left coordinates
-    const rotateBottomLeft = this.calculateCoordinateRotate_(rotation, bottomLeft);
-    overlay.setPosition(rotateBottomLeft);
+    // set position using center coordinates
+    overlay.setPosition(center);
 
     // set box size calculated from map extent size and overview map resolution
     if (box) {
-      box.style.width = Math.abs((bottomLeft[0] - topRight[0]) / ovresolution) + 'px';
-      box.style.height = Math.abs((topRight[1] - bottomLeft[1]) / ovresolution) + 'px';
+      box.style.width = width + 'px';
+      box.style.height = height + 'px';
+      const transform = 'rotate(' + rotation + 'rad)';
+      box.style.transform = transform;
     }
-  }
-
-  /**
-   * @param {number} rotation Target rotation.
-   * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
-   * @return {import("../coordinate.js").Coordinate|undefined} Coordinate for rotation and center anchor.
-   * @private
-   */
-  calculateCoordinateRotate_(rotation, coordinate) {
-    let coordinateRotate;
-
-    const map = this.getMap();
-    const view = map.getView();
-
-    const currentCenter = view.getCenter();
-
-    if (currentCenter) {
-      coordinateRotate = [
-        coordinate[0] - currentCenter[0],
-        coordinate[1] - currentCenter[1]
-      ];
-      rotateCoordinate(coordinateRotate, rotation);
-      addCoordinate(coordinateRotate, currentCenter);
-    }
-    return coordinateRotate;
   }
 
   /**
@@ -493,7 +491,12 @@ class OverviewMap extends Control {
     // manage overview map if it had not been rendered before and control
     // is expanded
     const ovmap = this.ovmap_;
-    if (!this.collapsed_ && !ovmap.isRendered()) {
+    if (!this.collapsed_) {
+      if (ovmap.isRendered()) {
+        this.viewExtent_ = undefined;
+        ovmap.render();
+        return;
+      }
       ovmap.updateSize();
       this.resetExtent_();
       listenOnce(ovmap, MapEventType.POSTRENDER,
@@ -550,6 +553,37 @@ class OverviewMap extends Control {
    */
   getCollapsed() {
     return this.collapsed_;
+  }
+
+  /**
+   * Return `true` if the overview map view can rotate, `false` otherwise.
+   * @return {boolean} True if the control view can rotate.
+   * @api
+   */
+  getRotateWithView() {
+    return this.rotateWithView_;
+  }
+
+  /**
+   * Set whether the overview map view should rotate with the main map view.
+   * @param {boolean} rotateWithView True if the control view should rotate.
+   * @api
+   */
+  setRotateWithView(rotateWithView) {
+    if (this.rotateWithView_ === rotateWithView) {
+      return;
+    }
+    this.rotateWithView_ = rotateWithView;
+    if (this.getMap().getView().getRotation() !== 0) {
+      if (this.rotateWithView_) {
+        this.handleRotationChanged_();
+      } else {
+        this.ovmap_.getView().setRotation(0);
+      }
+      this.viewExtent_ = undefined;
+      this.validateExtent_();
+      this.updateBox_();
+    }
   }
 
   /**

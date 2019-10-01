@@ -4,10 +4,10 @@ import Map from '../../../src/ol/Map.js';
 import MapEvent from '../../../src/ol/MapEvent.js';
 import Overlay from '../../../src/ol/Overlay.js';
 import View from '../../../src/ol/View.js';
-import {LineString, Point} from '../../../src/ol/geom.js';
+import {LineString, Point, Polygon} from '../../../src/ol/geom.js';
 import {focus} from '../../../src/ol/events/condition.js';
 import {defaults as defaultInteractions} from '../../../src/ol/interaction.js';
-import {get as getProjection} from '../../../src/ol/proj.js';
+import {get as getProjection, useGeographic, transform, clearUserProjection, fromLonLat} from '../../../src/ol/proj.js';
 import GeoJSON from '../../../src/ol/format/GeoJSON.js';
 import DragPan from '../../../src/ol/interaction/DragPan.js';
 import DoubleClickZoom from '../../../src/ol/interaction/DoubleClickZoom.js';
@@ -203,6 +203,7 @@ describe('ol.Map', function() {
         target: target,
         layers: [
           new TileLayer({
+            opacity: 0.5,
             source: new XYZ({
               url: 'spec/ol/data/osm-{z}-{x}-{y}.png'
             })
@@ -255,18 +256,19 @@ describe('ol.Map', function() {
 
   describe('#getFeaturesAtPixel', function() {
 
-    let target, map;
+    let target, map, layer;
     beforeEach(function() {
       target = document.createElement('div');
       target.style.width = target.style.height = '100px';
       document.body.appendChild(target);
+      layer = new VectorLayer({
+        source: new VectorSource({
+          features: [new Feature(new LineString([[-50, 0], [50, 0]]))]
+        })
+      });
       map = new Map({
         target: target,
-        layers: [new VectorLayer({
-          source: new VectorSource({
-            features: [new Feature(new LineString([[-50, 0], [50, 0]]))]
-          })
-        })],
+        layers: [layer],
         view: new View({
           center: [0, 0],
           zoom: 17
@@ -278,9 +280,10 @@ describe('ol.Map', function() {
       document.body.removeChild(target);
     });
 
-    it('returns null if no feature was found', function() {
+    it('returns an empty array if no feature was found', function() {
       const features = map.getFeaturesAtPixel([0, 0]);
-      expect(features).to.be(null);
+      expect(features).to.be.an(Array);
+      expect(features).to.be.empty();
     });
 
     it('returns an array of found features', function() {
@@ -308,12 +311,147 @@ describe('ol.Map', function() {
         source: new VectorSource
       });
       map.addLayer(otherLayer);
+      map.renderSync();
       const features = map.getFeaturesAtPixel([50, 50], {
         layerFilter: function(layer) {
-          return layer == otherLayer;
+          return layer === otherLayer;
         }
       });
-      expect(features).to.be(null);
+      expect(features).to.be.an(Array);
+      expect(features).to.be.empty();
+    });
+
+    it('finds off-world geometries', function() {
+      const line1 = new LineString([[130, 0], [230, 0]]);
+      line1.transform('EPSG:4326', 'EPSG:3857');
+      const line2 = new LineString([[-230, 0], [-130, 0]]);
+      line2.transform('EPSG:4326', 'EPSG:3857');
+      layer.getSource().addFeature(new Feature(line1));
+      layer.getSource().addFeature(new Feature(line2));
+      map.getView().setCenter(fromLonLat([180, 0]));
+      map.renderSync();
+
+      let features = map.getFeaturesAtPixel([60, 50]);
+      expect(features).to.be.an(Array);
+      expect(features.length).to.be(2);
+
+      features = map.getFeaturesAtPixel([60, 50], {checkWrapped: false});
+      expect(features).to.be.an(Array);
+      expect(features.length).to.be(1);
+
+      map.getView().setCenter(fromLonLat([-180, 0]));
+      map.renderSync();
+
+      features = map.getFeaturesAtPixel([40, 50]);
+      expect(features).to.be.an(Array);
+      expect(features.length).to.be(2);
+
+      features = map.getFeaturesAtPixel([40, 50], {checkWrapped: false});
+      expect(features).to.be.an(Array);
+      expect(features.length).to.be(1);
+    });
+  });
+
+  describe('#getFeaturesAtPixel - useGeographic', function() {
+
+    let target, map;
+    const size = 256;
+    beforeEach(function() {
+      useGeographic();
+
+      target = document.createElement('div');
+      target.style.width = target.style.height = size + 'px';
+      document.body.appendChild(target);
+
+      map = new Map({
+        target: target,
+        layers: [new VectorLayer({
+          source: new VectorSource({
+            features: [
+              new Feature(
+                new Polygon([
+                  [[-100, 40], [-90, 40], [-90, 50], [-100, 50], [-100, 40]]
+                ])
+              )
+            ]
+          })
+        })],
+        view: new View({
+          center: [0, 0],
+          zoom: 0
+        })
+      });
+      map.renderSync();
+    });
+
+    afterEach(function() {
+      clearUserProjection();
+      document.body.removeChild(target);
+    });
+
+    it('returns an empty array if no feature was found', function() {
+      const features = map.getFeaturesAtPixel([size / 2, size / 2]);
+      expect(features).to.be.an(Array);
+      expect(features).to.be.empty();
+    });
+
+    it('returns an array of found features', function() {
+      const coordinate = [-95, 45];
+      const pixel = map.getPixelFromCoordinate(coordinate);
+      const features = map.getFeaturesAtPixel(pixel);
+      expect(features).to.be.an(Array);
+      expect(features[0]).to.be.a(Feature);
+    });
+
+  });
+
+  describe('#hasFeatureAtPixel - useGeographic', function() {
+
+    let target, map;
+    const size = 256;
+    beforeEach(function() {
+      useGeographic();
+
+      target = document.createElement('div');
+      target.style.width = target.style.height = size + 'px';
+      document.body.appendChild(target);
+
+      map = new Map({
+        target: target,
+        layers: [new VectorLayer({
+          source: new VectorSource({
+            features: [
+              new Feature(
+                new Polygon([
+                  [[-100, 40], [-90, 40], [-90, 50], [-100, 50], [-100, 40]]
+                ])
+              )
+            ]
+          })
+        })],
+        view: new View({
+          center: [0, 0],
+          zoom: 0
+        })
+      });
+      map.renderSync();
+    });
+
+    afterEach(function() {
+      clearUserProjection();
+      document.body.removeChild(target);
+    });
+
+    it('returns false if no feature was found', function() {
+      const has = map.hasFeatureAtPixel([size / 2, size / 2]);
+      expect(has).to.be(false);
+    });
+
+    it('returns true if there are features found', function() {
+      const coordinate = [-95, 45];
+      const pixel = map.getPixelFromCoordinate(coordinate);
+      const has = map.hasFeatureAtPixel(pixel);
+      expect(has).to.be(true);
     });
 
   });
@@ -731,6 +869,78 @@ describe('ol.Map', function() {
 
     });
 
-  });
+    describe('getCoordinateFromPixel() and getPixelFromCoordinate()', function() {
 
+      let target, view, map;
+      const centerGeographic = [2.460938, 48.850258];
+      const centerMercator = transform(centerGeographic, getProjection('EPSG:4326'), getProjection('EPSG:3857'));
+      const screenCenter = [500, 500];
+
+      beforeEach(function() {
+        target = document.createElement('div');
+
+        const style = target.style;
+        style.position = 'absolute';
+        style.left = '-1000px';
+        style.top = '-1000px';
+        style.width = `${screenCenter[0] * 2}px`;
+        style.height = `${screenCenter[1] * 2}px`;
+        document.body.appendChild(target);
+
+        useGeographic();
+
+        view = new View({
+          center: centerGeographic,
+          zoom: 3
+        });
+        map = new Map({
+          target: target,
+          view: view,
+          layers: [
+            new TileLayer({
+              source: new XYZ({
+                url: '#{x}/{y}/{z}'
+              })
+            })
+          ]
+        });
+      });
+
+      afterEach(function() {
+        map.dispose();
+        document.body.removeChild(target);
+        clearUserProjection();
+      });
+
+      it('gets coordinates in user projection', function(done) {
+        map.renderSync();
+        const coordinateGeographic = map.getCoordinateFromPixel(screenCenter);
+        expect(coordinateGeographic[0]).to.roughlyEqual(centerGeographic[0], 1e-5);
+        expect(coordinateGeographic[1]).to.roughlyEqual(centerGeographic[1], 1e-5);
+        done();
+      });
+
+      it('gets coordinates in view projection', function(done) {
+        map.renderSync();
+        const coordinateMercator = map.getCoordinateFromPixelInternal(screenCenter);
+        expect(coordinateMercator[0]).to.roughlyEqual(centerMercator[0], 1e-5);
+        expect(coordinateMercator[1]).to.roughlyEqual(centerMercator[1], 1e-5);
+        done();
+      });
+
+      it('gets pixel from coordinates in user projection', function(done) {
+        map.renderSync();
+        const pixel = map.getPixelFromCoordinate(centerGeographic);
+        expect(pixel).to.eql(screenCenter);
+        done();
+      });
+
+      it('gets pixel from coordinates in view projection', function(done) {
+        map.renderSync();
+        const pixel = map.getPixelFromCoordinateInternal(centerMercator);
+        expect(pixel).to.eql(screenCenter);
+        done();
+      });
+    });
+  });
 });

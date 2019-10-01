@@ -178,25 +178,11 @@ class Overlay extends BaseObject {
      */
     this.mapPostrenderListenerKey = null;
 
-    listen(
-      this, getChangeEventType(Property.ELEMENT),
-      this.handleElementChanged, this);
-
-    listen(
-      this, getChangeEventType(Property.MAP),
-      this.handleMapChanged, this);
-
-    listen(
-      this, getChangeEventType(Property.OFFSET),
-      this.handleOffsetChanged, this);
-
-    listen(
-      this, getChangeEventType(Property.POSITION),
-      this.handlePositionChanged, this);
-
-    listen(
-      this, getChangeEventType(Property.POSITIONING),
-      this.handlePositioningChanged, this);
+    this.addEventListener(getChangeEventType(Property.ELEMENT), this.handleElementChanged);
+    this.addEventListener(getChangeEventType(Property.MAP), this.handleMapChanged);
+    this.addEventListener(getChangeEventType(Property.OFFSET), this.handleOffsetChanged);
+    this.addEventListener(getChangeEventType(Property.POSITION), this.handlePositionChanged);
+    this.addEventListener(getChangeEventType(Property.POSITIONING), this.handlePositioningChanged);
 
     if (options.element !== undefined) {
       this.setElement(options.element);
@@ -432,15 +418,15 @@ class Overlay extends BaseObject {
       }
 
       if (delta[0] !== 0 || delta[1] !== 0) {
-        const center = /** @type {import("./coordinate.js").Coordinate} */ (map.getView().getCenter());
-        const centerPx = map.getPixelFromCoordinate(center);
+        const center = /** @type {import("./coordinate.js").Coordinate} */ (map.getView().getCenterInternal());
+        const centerPx = map.getPixelFromCoordinateInternal(center);
         const newCenterPx = [
           centerPx[0] + delta[0],
           centerPx[1] + delta[1]
         ];
 
-        map.getView().animate({
-          center: map.getCoordinateFromPixel(newCenterPx),
+        map.getView().animateInternal({
+          center: map.getCoordinateFromPixelInternal(newCenterPx),
           duration: this.autoPanAnimation.duration,
           easing: this.autoPanAnimation.easing
         });
@@ -450,8 +436,8 @@ class Overlay extends BaseObject {
 
   /**
    * Get the extent of an element relative to the document
-   * @param {HTMLElement|undefined} element The element.
-   * @param {import("./size.js").Size|undefined} size The size of the element.
+   * @param {HTMLElement} element The element.
+   * @param {import("./size.js").Size} size The size of the element.
    * @return {import("./extent.js").Extent} The extent.
    * @protected
    */

@@ -1,8 +1,8 @@
 /**
  * @module ol/control/ZoomToExtent
  */
-import {listen} from '../events.js';
 import EventType from '../events/EventType.js';
+import {fromExtent as polygonFromExtent} from '../geom/Polygon.js';
 import Control from './Control.js';
 import {CLASS_CONTROL, CLASS_UNSELECTABLE} from '../css.js';
 
@@ -41,7 +41,7 @@ class ZoomToExtent extends Control {
     });
 
     /**
-     * @type {import("../extent.js").Extent}
+     * @type {?import("../extent.js").Extent}
      * @protected
      */
     this.extent = options.extent ? options.extent : null;
@@ -57,7 +57,7 @@ class ZoomToExtent extends Control {
       typeof label === 'string' ? document.createTextNode(label) : label
     );
 
-    listen(button, EventType.CLICK, this.handleClick_, this);
+    button.addEventListener(EventType.CLICK, this.handleClick_.bind(this), false);
 
     const cssClasses = className + ' ' + CLASS_UNSELECTABLE + ' ' + CLASS_CONTROL;
     const element = this.element;
@@ -81,7 +81,7 @@ class ZoomToExtent extends Control {
     const map = this.getMap();
     const view = map.getView();
     const extent = !this.extent ? view.getProjection().getExtent() : this.extent;
-    view.fit(extent);
+    view.fitInternal(polygonFromExtent(extent));
   }
 }
 

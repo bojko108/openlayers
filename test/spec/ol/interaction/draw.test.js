@@ -15,7 +15,7 @@ import Polygon from '../../../../src/ol/geom/Polygon.js';
 import Draw, {createRegularPolygon, createBox} from '../../../../src/ol/interaction/Draw.js';
 import Interaction from '../../../../src/ol/interaction/Interaction.js';
 import VectorLayer from '../../../../src/ol/layer/Vector.js';
-import PointerEvent from '../../../../src/ol/pointer/PointerEvent.js';
+import Event from '../../../../src/ol/events/Event.js';
 import VectorSource from '../../../../src/ol/source/Vector.js';
 
 
@@ -69,14 +69,14 @@ describe('ol.interaction.Draw', function() {
     // calculated in case body has top < 0 (test runner with small window)
     const position = viewport.getBoundingClientRect();
     const shiftKey = opt_shiftKey !== undefined ? opt_shiftKey : false;
-    const event = new PointerEvent(type, {
-      clientX: position.left + x + width / 2,
-      clientY: position.top + y + height / 2,
-      shiftKey: shiftKey,
-      preventDefault: function() {}
-    }, {
-      pointerType: 'mouse'
-    });
+    const event = new Event();
+    event.type = type;
+    event.clientX = position.left + x + width / 2;
+    event.clientY = position.top + y + height / 2;
+    event.shiftKey = shiftKey;
+    event.preventDefault = function() {};
+    event.pointerType = 'mouse';
+    event.pointerId = 0;
     const simulatedEvent = new MapBrowserPointerEvent(type, map, event);
     map.handleMapBrowserEvent(simulatedEvent);
     return simulatedEvent;
@@ -216,8 +216,8 @@ describe('ol.interaction.Draw', function() {
       simulateEvent('pointermove', 10, 20);
       simulateEvent('pointerdown', 10, 20);
       simulateEvent('pointerup', 10, 20);
-      expect(ds).to.be.called();
-      expect(de).to.be.called();
+      expect(ds.called).to.be(true);
+      expect(de.called).to.be(true);
       simulateEvent('pointermove', 20, 20);
       expect(ds.callCount).to.be(1);
       expect(de.callCount).to.be(1);
@@ -390,7 +390,6 @@ describe('ol.interaction.Draw', function() {
       simulateEvent('pointerup', 60, 70);
 
       const features = source.getFeatures();
-      // expect(features).to.have.length(1);
       const geometry = features[0].getGeometry();
       expect(geometry).to.be.a(LineString);
       expect(geometry.getCoordinates()).to.eql(
@@ -478,9 +477,9 @@ describe('ol.interaction.Draw', function() {
       simulateEvent('pointerup', 30, 20);
       simulateEvent('pointermove', 10, 20);
 
-      expect(ds).to.be.called();
+      expect(ds.called).to.be(true);
       expect(ds.callCount).to.be(1);
-      expect(de).to.be.called();
+      expect(de.called).to.be(true);
       expect(de.callCount).to.be(1);
     });
 
@@ -801,9 +800,9 @@ describe('ol.interaction.Draw', function() {
       simulateEvent('pointerdown', 10, 20);
       simulateEvent('pointerup', 10, 20);
 
-      expect(ds).to.be.called();
+      expect(ds.called).to.be(true);
       expect(ds.callCount).to.be(1);
-      expect(de).to.be.called();
+      expect(de.called).to.be(true);
       expect(de.callCount).to.be(1);
     });
 
@@ -963,9 +962,9 @@ describe('ol.interaction.Draw', function() {
       simulateEvent('pointerdown', 30, 20);
       simulateEvent('pointerup', 30, 20);
 
-      expect(ds).to.be.called();
+      expect(ds.called).to.be(true);
       expect(ds.callCount).to.be(1);
-      expect(de).to.be.called();
+      expect(de.called).to.be(true);
       expect(de.callCount).to.be(1);
     });
 

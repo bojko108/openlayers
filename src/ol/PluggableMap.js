@@ -18,7 +18,7 @@ import View from './View.js';
 import ViewHint from './ViewHint.js';
 import { assert } from './asserts.js';
 import { removeNode } from './dom.js';
-import { listen, unlistenByKey, unlisten } from './events.js';
+import { listen, unlistenByKey } from './events.js';
 import EventType from './events/EventType.js';
 import { createEmpty, clone, createOrUpdateEmpty, equals, getForViewAndSize, isEmpty } from './extent.js';
 import { TRUE } from './functions.js';
@@ -27,6 +27,7 @@ import LayerGroup from './layer/Group.js';
 import { hasArea } from './size.js';
 import { DROP } from './structs/PriorityQueue.js';
 import { create as createTransform, apply as applyTransform } from './transform.js';
+import { toUserCoordinate, fromUserCoordinate } from './proj.js';
 import LayerProperty from './layer/Property.js';
 
 /**
@@ -40,14 +41,12 @@ import LayerProperty from './layer/Property.js';
  * @property {import("./transform.js").Transform} coordinateToPixelTransform
  * @property {null|import("./extent.js").Extent} extent
  * @property {Array<DeclutterItems>} declutterItems
- * @property {import("./coordinate.js").Coordinate} focus
  * @property {number} index
  * @property {Array<import("./layer/Layer.js").State>} layerStatesArray
  * @property {number} layerIndex
  * @property {import("./transform.js").Transform} pixelToCoordinateTransform
  * @property {Array<PostRenderFunction>} postRenderFunctions
  * @property {import("./size.js").Size} size
- * @property {!Object<string, boolean>} skippedFeatureUids
  * @property {TileQueue} tileQueue
  * @property {!Object<string, Object<string, boolean>>} usedTiles
  * @property {Array<number>} viewHints
@@ -73,6 +72,8 @@ import LayerProperty from './layer/Property.js';
  * will be tested for features. By default, all visible layers will be tested.
  * @property {number} [hitTolerance=0] Hit-detection tolerance in pixels. Pixels
  * inside the radius around the given position will be checked for features.
+ * @property {boolean} [checkWrapped=true] Check-Wrapped Will check for for wrapped geometries inside the range of
+ *   +/- 1 world width. Works only if a projection is used that can be wrapped.
  */
 
 /**
@@ -141,6 +142,9 @@ class PluggableMap extends BaseObject {
 
     const optionsInternal = createOptionsInternal(options);
 
+    /** @private */
+    this.boundHandleBrowserEvent_ = this.handleBrowserEvent.bind(this);
+
     /**
      * @type {number}
      * @private
@@ -152,6 +156,12 @@ class PluggableMap extends BaseObject {
      * @type {number}
      */
     this.pixelRatio_ = options.pixelRatio !== undefined ? options.pixelRatio : DEVICE_PIXEL_RATIO;
+
+    /**
+     * @private
+     * @type {*}
+     */
+    this.postRenderTimeoutHandle_;
 
     /**
      * @private
@@ -212,7 +222,7 @@ class PluggableMap extends BaseObject {
 
     /**
      * @private
-     * @type {Array<import("./events.js").EventsKey>}
+     * @type {?Array<import("./events.js").EventsKey>}
      */
     this.layerGroupPropertyListenerKeys_ = null;
 
@@ -259,8 +269,9 @@ class PluggableMap extends BaseObject {
      * @type {MapBrowserEventHandler}
      */
     this.mapBrowserEventHandler_ = new MapBrowserEventHandler(this, options.moveTolerance);
+    const handleMapBrowserEvent = this.handleMapBrowserEvent.bind(this);
     for (const key in MapBrowserEventType) {
-      listen(this.mapBrowserEventHandler_, MapBrowserEventType[key], this.handleMapBrowserEvent, this);
+      this.mapBrowserEventHandler_.addEventListener(MapBrowserEventType[key], handleMapBrowserEvent);
     }
 
     /**
@@ -271,13 +282,13 @@ class PluggableMap extends BaseObject {
 
     /**
      * @private
-     * @type {Array<import("./events.js").EventsKey>}
+     * @type {?Array<import("./events.js").EventsKey>}
      */
     this.keyHandlerKeys_ = null;
 
-    listen(this.viewport_, EventType.CONTEXTMENU, this.handleBrowserEvent, this);
-    listen(this.viewport_, EventType.WHEEL, this.handleBrowserEvent, this);
-    listen(this.viewport_, EventType.MOUSEWHEEL, this.handleBrowserEvent, this);
+    const handleBrowserEvent = this.handleBrowserEvent.bind(this);
+    this.viewport_.addEventListener(EventType.CONTEXTMENU, handleBrowserEvent, false);
+    this.viewport_.addEventListener(EventType.WHEEL, handleBrowserEvent, false);
 
     /**
      * @type {Collection<import("./control/Control.js").default>}
@@ -328,12 +339,6 @@ class PluggableMap extends BaseObject {
 
     /**
      * @private
-     * @type {import("./coordinate.js").Coordinate}
-     */
-    this.focus_ = null;
-
-    /**
-     * @private
      * @type {!Array<PostRenderFunction>}
      */
     this.postRenderFunctions_ = [];
@@ -344,17 +349,10 @@ class PluggableMap extends BaseObject {
      */
     this.tileQueue_ = new TileQueue(this.getTilePriority.bind(this), this.handleTileChange_.bind(this));
 
-    /**
-     * Uids of features to skip at rendering time.
-     * @type {Object<string, boolean>}
-     * @private
-     */
-    this.skippedFeatureUids_ = {};
-
-    listen(this, getChangeEventType(MapProperty.LAYERGROUP), this.handleLayerGroupChanged_, this);
-    listen(this, getChangeEventType(MapProperty.VIEW), this.handleViewChanged_, this);
-    listen(this, getChangeEventType(MapProperty.SIZE), this.handleSizeChanged_, this);
-    listen(this, getChangeEventType(MapProperty.TARGET), this.handleTargetChanged_, this);
+    this.addEventListener(getChangeEventType(MapProperty.LAYERGROUP), this.handleLayerGroupChanged_);
+    this.addEventListener(getChangeEventType(MapProperty.VIEW), this.handleViewChanged_);
+    this.addEventListener(getChangeEventType(MapProperty.SIZE), this.handleSizeChanged_);
+    this.addEventListener(getChangeEventType(MapProperty.TARGET), this.handleTargetChanged_);
 
     // setProperties will trigger the rendering of the map if the map
     // is "defined" already.
@@ -370,28 +368,24 @@ class PluggableMap extends BaseObject {
       }.bind(this)
     );
 
-    listen(
-      this.controls,
+    this.controls.addEventListener(
       CollectionEventType.ADD,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
         event.element.setMap(this);
-      },
-      this
+      }.bind(this)
     );
 
-    listen(
-      this.controls,
+    this.controls.addEventListener(
       CollectionEventType.REMOVE,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
         event.element.setMap(null);
-      },
-      this
+      }.bind(this)
     );
 
     this.interactions.forEach(
@@ -404,46 +398,39 @@ class PluggableMap extends BaseObject {
       }.bind(this)
     );
 
-    listen(
-      this.interactions,
+    this.interactions.addEventListener(
       CollectionEventType.ADD,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
         event.element.setMap(this);
-      },
-      this
+      }.bind(this)
     );
 
-    listen(
-      this.interactions,
+    this.interactions.addEventListener(
       CollectionEventType.REMOVE,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
         event.element.setMap(null);
-      },
-      this
+      }.bind(this)
     );
 
     this.overlays_.forEach(this.addOverlayInternal_.bind(this));
 
-    listen(
-      this.overlays_,
+    this.overlays_.addEventListener(
       CollectionEventType.ADD,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
         this.addOverlayInternal_(/** @type {import("./Overlay.js").default} */ (event.element));
-      },
-      this
+      }.bind(this)
     );
 
-    listen(
-      this.overlays_,
+    this.overlays_.addEventListener(
       CollectionEventType.REMOVE,
       /**
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
@@ -455,8 +442,7 @@ class PluggableMap extends BaseObject {
           delete this.overlayIdIndex_[id.toString()];
         }
         event.element.setMap(null);
-      },
-      this
+      }.bind(this)
     );
   }
 
@@ -532,9 +518,8 @@ class PluggableMap extends BaseObject {
    */
   disposeInternal() {
     this.mapBrowserEventHandler_.dispose();
-    unlisten(this.viewport_, EventType.CONTEXTMENU, this.handleBrowserEvent, this);
-    unlisten(this.viewport_, EventType.WHEEL, this.handleBrowserEvent, this);
-    unlisten(this.viewport_, EventType.MOUSEWHEEL, this.handleBrowserEvent, this);
+    this.viewport_.removeEventListener(EventType.CONTEXTMENU, this.boundHandleBrowserEvent_);
+    this.viewport_.removeEventListener(EventType.WHEEL, this.boundHandleBrowserEvent_);
     if (this.handleResize_ !== undefined) {
       removeEventListener(EventType.RESIZE, this.handleResize_, false);
       this.handleResize_ = undefined;
@@ -566,11 +551,12 @@ class PluggableMap extends BaseObject {
     if (!this.frameState_) {
       return;
     }
-    const coordinate = this.getCoordinateFromPixel(pixel);
+    const coordinate = this.getCoordinateFromPixelInternal(pixel);
     opt_options = opt_options !== undefined ? opt_options : /** @type {AtPixelOptions} */ ({});
     const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
     const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
-    return this.renderer_.forEachFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, callback, null, layerFilter, null);
+    const checkWrapped = opt_options.checkWrapped !== false;
+    return this.renderer_.forEachFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, checkWrapped, callback, null, layerFilter, null);
   }
 
   /**
@@ -578,17 +564,14 @@ class PluggableMap extends BaseObject {
    * @param {import("./pixel.js").Pixel} pixel Pixel.
    * @param {AtPixelOptions=} opt_options Optional options.
    * @return {Array<import("./Feature.js").FeatureLike>} The detected features or
-   * `null` if none were found.
+   * an empty array if none were found.
    * @api
    */
   getFeaturesAtPixel(pixel, opt_options) {
-    let features = null;
+    const features = [];
     this.forEachFeatureAtPixel(
       pixel,
       function(feature) {
-        if (!features) {
-          features = [];
-        }
         features.push(feature);
       },
       opt_options
@@ -600,6 +583,10 @@ class PluggableMap extends BaseObject {
    * Detect layers that have a color value at a pixel on the viewport, and
    * execute a callback with each matching layer. Layers included in the
    * detection can be configured through `opt_layerFilter`.
+   *
+   * Note: this may give false positives unless the map layers have had different `className`
+   * properties assigned to them.
+   *
    * @param {import("./pixel.js").Pixel} pixel Pixel.
    * @param {function(this: S, import("./layer/Layer.js").default, (Uint8ClampedArray|Uint8Array)): T} callback
    *     Layer callback. This callback will receive two arguments: first is the
@@ -618,7 +605,7 @@ class PluggableMap extends BaseObject {
       return;
     }
     const options = opt_options || /** @type {AtPixelOptions} */ ({});
-    const hitTolerance = options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
+    const hitTolerance = options.hitTolerance !== undefined ? options.hitTolerance * this.frameState_.pixelRatio : 0;
     const layerFilter = options.layerFilter || TRUE;
     return this.renderer_.forEachLayerAtPixel(pixel, this.frameState_, hitTolerance, callback, layerFilter);
   }
@@ -635,21 +622,31 @@ class PluggableMap extends BaseObject {
     if (!this.frameState_) {
       return false;
     }
-    const coordinate = this.getCoordinateFromPixel(pixel);
+    const coordinate = this.getCoordinateFromPixelInternal(pixel);
     opt_options = opt_options !== undefined ? opt_options : /** @type {AtPixelOptions} */ ({});
     const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
     const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
-    return this.renderer_.hasFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, layerFilter, null);
+    const checkWrapped = opt_options.checkWrapped !== false;
+    return this.renderer_.hasFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, checkWrapped, layerFilter, null);
   }
 
   /**
-   * Returns the coordinate in view projection for a browser event.
+   * Returns the coordinate in user projection for a browser event.
    * @param {Event} event Event.
    * @return {import("./coordinate.js").Coordinate} Coordinate.
    * @api
    */
   getEventCoordinate(event) {
     return this.getCoordinateFromPixel(this.getEventPixel(event));
+  }
+
+  /**
+   * Returns the coordinate in view projection for a browser event.
+   * @param {Event} event Event.
+   * @return {import("./coordinate.js").Coordinate} Coordinate.
+   */
+  getEventCoordinateInternal(event) {
+    return this.getCoordinateFromPixelInternal(this.getEventPixel(event));
   }
 
   /**
@@ -696,12 +693,22 @@ class PluggableMap extends BaseObject {
 
   /**
    * Get the coordinate for a given pixel.  This returns a coordinate in the
-   * map view projection.
+   * user projection.
    * @param {import("./pixel.js").Pixel} pixel Pixel position in the map viewport.
    * @return {import("./coordinate.js").Coordinate} The coordinate for the pixel position.
    * @api
    */
   getCoordinateFromPixel(pixel) {
+    return toUserCoordinate(this.getCoordinateFromPixelInternal(pixel), this.getView().getProjection());
+  }
+
+  /**
+   * Get the coordinate for a given pixel.  This returns a coordinate in the
+   * map view projection.
+   * @param {import("./pixel.js").Pixel} pixel Pixel position in the map viewport.
+   * @return {import("./coordinate.js").Coordinate} The coordinate for the pixel position.
+   */
+  getCoordinateFromPixelInternal(pixel) {
     const frameState = this.frameState_;
     if (!frameState) {
       return null;
@@ -791,13 +798,24 @@ class PluggableMap extends BaseObject {
   }
 
   /**
-   * Get the pixel for a coordinate.  This takes a coordinate in the map view
+   * Get the pixel for a coordinate.  This takes a coordinate in the user
    * projection and returns the corresponding pixel.
    * @param {import("./coordinate.js").Coordinate} coordinate A map coordinate.
    * @return {import("./pixel.js").Pixel} A pixel position in the map viewport.
    * @api
    */
   getPixelFromCoordinate(coordinate) {
+    const viewCoordinate = fromUserCoordinate(coordinate, this.getView().getProjection());
+    return this.getPixelFromCoordinateInternal(viewCoordinate);
+  }
+
+  /**
+   * Get the pixel for a coordinate.  This takes a coordinate in the map view
+   * projection and returns the corresponding pixel.
+   * @param {import("./coordinate.js").Coordinate} coordinate A map coordinate.
+   * @return {import("./pixel.js").Pixel} A pixel position in the map viewport.
+   */
+  getPixelFromCoordinateInternal(coordinate) {
     const frameState = this.frameState_;
     if (!frameState) {
       return null;
@@ -885,12 +903,13 @@ class PluggableMap extends BaseObject {
     }
     // Prioritize the highest zoom level tiles closest to the focus.
     // Tiles at higher zoom levels are prioritized using Math.log(tileResolution).
-    // Within a zoom level, tiles are prioritized by the distance in pixels
-    // between the center of the tile and the focus.  The factor of 65536 means
-    // that the prioritization should behave as desired for tiles up to
+    // Within a zoom level, tiles are prioritized by the distance in pixels between
+    // the center of the tile and the center of the viewport.  The factor of 65536
+    // means that the prioritization should behave as desired for tiles up to
     // 65536 * Math.log(2) = 45426 pixels from the focus.
-    const deltaX = tileCenter[0] - frameState.focus[0];
-    const deltaY = tileCenter[1] - frameState.focus[1];
+    const center = frameState.viewState.center;
+    const deltaX = tileCenter[0] - center[0];
+    const deltaY = tileCenter[1] - center[1];
     return 65536 * Math.log(tileResolution) + Math.sqrt(deltaX * deltaX + deltaY * deltaY) / tileResolution;
   }
 
@@ -920,7 +939,6 @@ class PluggableMap extends BaseObject {
       }
       target = target.parentElement;
     }
-    this.focus_ = mapBrowserEvent.coordinate;
     mapBrowserEvent.frameState = this.frameState_;
     const interactionsArray = this.getInteractions().getArray();
     if (this.dispatchEvent(mapBrowserEvent) !== false) {
@@ -977,6 +995,7 @@ class PluggableMap extends BaseObject {
       !this.tileQueue_.getTilesLoading() &&
       !this.getLoading()
     ) {
+      // @ts-ignore
       this.renderer_.dispatchRenderEvent(RenderEventType.RENDERCOMPLETE, frameState);
     }
 
@@ -1021,6 +1040,8 @@ class PluggableMap extends BaseObject {
 
     if (!targetElement) {
       if (this.renderer_) {
+        clearTimeout(this.postRenderTimeoutHandle_);
+        this.postRenderFunctions_.length = 0;
         this.renderer_.dispose();
         this.renderer_ = null;
       }
@@ -1204,23 +1225,19 @@ class PluggableMap extends BaseObject {
    * @private
    */
   renderFrame_(time) {
-    let viewState;
-
     const size = this.getSize();
     const view = this.getView();
-    const extent = createEmpty();
     const previousFrameState = this.frameState_;
     /** @type {?FrameState} */
     let frameState = null;
     if (size !== undefined && hasArea(size) && view && view.isDef()) {
       const viewHints = view.getHints(this.frameState_ ? this.frameState_.viewHints : undefined);
-      viewState = view.getState();
+      const viewState = view.getState();
       frameState = {
         animate: false,
         coordinateToPixelTransform: this.coordinateToPixelTransform_,
         declutterItems: previousFrameState ? previousFrameState.declutterItems : [],
-        extent: extent,
-        focus: this.focus_ ? this.focus_ : viewState.center,
+        extent: getForViewAndSize(viewState.center, viewState.resolution, viewState.rotation, size),
         index: this.frameIndex_++,
         layerIndex: 0,
         layerStatesArray: this.getLayerGroup().getLayerStatesArray(),
@@ -1228,7 +1245,6 @@ class PluggableMap extends BaseObject {
         pixelToCoordinateTransform: this.pixelToCoordinateTransform_,
         postRenderFunctions: [],
         size: size,
-        skippedFeatureUids: this.skippedFeatureUids_,
         tileQueue: this.tileQueue_,
         time: time,
         usedTiles: {},
@@ -1236,10 +1252,6 @@ class PluggableMap extends BaseObject {
         viewHints: viewHints,
         wantedTiles: {}
       };
-    }
-
-    if (frameState) {
-      frameState.extent = getForViewAndSize(viewState.center, viewState.resolution, viewState.rotation, frameState.size, extent);
     }
 
     this.frameState_ = frameState;
@@ -1273,7 +1285,7 @@ class PluggableMap extends BaseObject {
 
     this.dispatchEvent(new MapEvent(MapEventType.POSTRENDER, this, frameState));
 
-    setTimeout(this.handlePostRender.bind(this), 0);
+    this.postRenderTimeoutHandle_ = setTimeout(this.handlePostRender.bind(this), 0);
   }
 
   /**
@@ -1318,14 +1330,6 @@ class PluggableMap extends BaseObject {
   }
 
   /**
-   * @param {import("./Feature.js").default} feature Feature.
-   */
-  skipFeature(feature) {
-    this.skippedFeatureUids_[getUid(feature)] = true;
-    this.render();
-  }
-
-  /**
    * Force a recalculation of the map viewport size.  This should be called when
    * third-party code changes the size of the map viewport.
    * @api
@@ -1350,14 +1354,6 @@ class PluggableMap extends BaseObject {
           parseFloat(computedStyle['borderBottomWidth'])
       ]);
     }
-  }
-
-  /**
-   * @param {import("./Feature.js").default} feature Feature.
-   */
-  unskipFeature(feature) {
-    delete this.skippedFeatureUids_[getUid(feature)];
-    this.render();
   }
 }
 

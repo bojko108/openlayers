@@ -201,6 +201,17 @@ class RenderFeature {
   }
 
   /**
+   * Get a transformed and simplified version of the geometry.
+   * @abstract
+   * @param {number} squaredTolerance Squared tolerance.
+   * @param {import("../proj.js").TransformFunction} [opt_transform] Optional transform function.
+   * @return {RenderFeature} Simplified geometry.
+   */
+  simplifyTransformed(squaredTolerance, opt_transform) {
+    return this;
+  }
+
+  /**
    * Get the feature properties.
    * @return {Object<string, *>} Feature properties.
    * @api

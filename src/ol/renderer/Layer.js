@@ -4,22 +4,27 @@
 import {abstract} from '../util.js';
 import ImageState from '../ImageState.js';
 import Observable from '../Observable.js';
-import {listen} from '../events.js';
 import EventType from '../events/EventType.js';
 import SourceState from '../source/State.js';
 
+/**
+ * @template {import("../layer/Layer.js").default} LayerType
+ */
 class LayerRenderer extends Observable {
 
   /**
-   * @param {import("../layer/Layer.js").default} layer Layer.
+   * @param {LayerType} layer Layer.
    */
   constructor(layer) {
 
     super();
 
+    /** @private */
+    this.boundHandleImageChange_ = this.handleImageChange_.bind(this);
+
     /**
      * @private
-     * @type {import("../layer/Layer.js").default}
+     * @type {LayerType}
      */
     this.layer_ = layer;
 
@@ -81,7 +86,6 @@ class LayerRenderer extends Observable {
       }
     ).bind(this);
   }
-
   /**
    * @abstract
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
@@ -108,7 +112,7 @@ class LayerRenderer extends Observable {
   }
 
   /**
-   * @return {import("../layer/Layer.js").default} Layer.
+   * @return {LayerType} Layer.
    */
   getLayer() {
     return this.layer_;
@@ -142,7 +146,7 @@ class LayerRenderer extends Observable {
   loadImage(image) {
     let imageState = image.getState();
     if (imageState != ImageState.LOADED && imageState != ImageState.ERROR) {
-      listen(image, EventType.CHANGE, this.handleImageChange_, this);
+      image.addEventListener(EventType.CHANGE, this.boundHandleImageChange_);
     }
     if (imageState == ImageState.IDLE) {
       image.load();

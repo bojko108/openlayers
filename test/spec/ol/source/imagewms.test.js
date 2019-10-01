@@ -211,7 +211,7 @@ describe('ol.source.ImageWMS', function() {
       const source = new ImageWMS(options);
       const image = source.getImage(extent, resolution, pixelRatio, projection);
       image.load();
-      expect(imageLoadFunction).to.be.called();
+      expect(imageLoadFunction.called).to.be(true);
       expect(imageLoadFunction.calledWith(image, image.src_)).to.be(true);
     });
 
@@ -243,11 +243,11 @@ describe('ol.source.ImageWMS', function() {
 
   });
 
-  describe('#getGetFeatureInfoUrl', function() {
+  describe('#getFeatureInfoUrl', function() {
 
     it('returns the expected GetFeatureInfo URL', function() {
       const source = new ImageWMS(options);
-      const url = source.getGetFeatureInfoUrl(
+      const url = source.getFeatureInfoUrl(
         [20, 30], resolution, projection,
         {INFO_FORMAT: 'text/plain'});
       const uri = new URL(url);
@@ -275,7 +275,7 @@ describe('ol.source.ImageWMS', function() {
 
     it('returns the expected GetFeatureInfo URL when source\'s projection is different from the parameter', function() {
       const source = new ImageWMS(optionsReproj);
-      const url = source.getGetFeatureInfoUrl(
+      const url = source.getFeatureInfoUrl(
         [20, 30], resolution, projection,
         {INFO_FORMAT: 'text/plain'});
       const uri = new URL(url);
@@ -303,7 +303,7 @@ describe('ol.source.ImageWMS', function() {
 
     it('sets the QUERY_LAYERS param as expected', function() {
       const source = new ImageWMS(options);
-      const url = source.getGetFeatureInfoUrl(
+      const url = source.getFeatureInfoUrl(
         [20, 30], resolution, projection,
         {INFO_FORMAT: 'text/plain', QUERY_LAYERS: 'foo,bar'});
       const uri = new URL(url);
@@ -330,11 +330,11 @@ describe('ol.source.ImageWMS', function() {
     });
   });
 
-  describe('#getGetLegendGraphicUrl', function() {
+  describe('#getLegendUrl', function() {
 
-    it('returns the getLegendGraphic url as expected', function() {
+    it('returns the GetLegendGraphic url as expected', function() {
       const source = new ImageWMS(options);
-      const url = source.getGetLegendGraphicUrl(resolution);
+      const url = source.getLegendUrl(resolution);
       const uri = new URL(url);
       expect(uri.protocol).to.be('http:');
       expect(uri.hostname).to.be('example.com');
@@ -350,7 +350,7 @@ describe('ol.source.ImageWMS', function() {
 
     it('does not include SCALE if no resolution was provided', function() {
       const source = new ImageWMS(options);
-      const url = source.getGetLegendGraphicUrl();
+      const url = source.getLegendUrl();
       const uri = new URL(url);
       const queryData = uri.searchParams;
       expect(queryData.get('SCALE')).to.be(null);
@@ -358,7 +358,7 @@ describe('ol.source.ImageWMS', function() {
 
     it('adds additional params as expected', function() {
       const source = new ImageWMS(options);
-      const url = source.getGetLegendGraphicUrl(resolution, {
+      const url = source.getLegendUrl(resolution, {
         STYLE: 'STYLE_VALUE',
         FEATURETYPE: 'FEATURETYPE_VALUE',
         RULE: 'RULE_VALUE',
@@ -368,7 +368,8 @@ describe('ol.source.ImageWMS', function() {
         WIDTH: 'WIDTH_VALUE',
         HEIGHT: 'HEIGHT_VALUE',
         EXCEPTIONS: 'EXCEPTIONS_VALUE',
-        LANGUAGE: 'LANGUAGE_VALUE'
+        LANGUAGE: 'LANGUAGE_VALUE',
+        LAYER: 'LAYER_VALUE'
       });
       const uri = new URL(url);
       expect(uri.protocol).to.be('http:');
@@ -376,7 +377,7 @@ describe('ol.source.ImageWMS', function() {
       expect(uri.pathname).to.be('/wms');
       const queryData = uri.searchParams;
       expect(queryData.get('FORMAT')).to.be('FORMAT_VALUE');
-      expect(queryData.get('LAYER')).to.be('layer');
+      expect(queryData.get('LAYER')).to.be('LAYER_VALUE');
       expect(queryData.get('REQUEST')).to.be('GetLegendGraphic');
       expect(queryData.get('SERVICE')).to.be('WMS');
       expect(queryData.get('VERSION')).to.be('1.3.0');

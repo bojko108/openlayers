@@ -1,7 +1,7 @@
 /**
  * @module ol/renderer/Map
  */
-import {abstract, getUid} from '../util.js';
+import {abstract} from '../util.js';
 import Disposable from '../Disposable.js';
 import {getWidth} from '../extent.js';
 import {TRUE} from '../functions.js';
@@ -65,6 +65,7 @@ class MapRenderer extends Disposable {
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
    * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
    * @param {number} hitTolerance Hit tolerance in pixels.
+   * @param {boolean} checkWrapped Check for wrapped geometries.
    * @param {function(this: S, import("../Feature.js").FeatureLike,
    *     import("../layer/Layer.js").default): T} callback Feature callback.
    * @param {S} thisArg Value to use as `this` when executing `callback`.
@@ -80,6 +81,7 @@ class MapRenderer extends Disposable {
     coordinate,
     frameState,
     hitTolerance,
+    checkWrapped,
     callback,
     thisArg,
     layerFilter,
@@ -95,14 +97,13 @@ class MapRenderer extends Disposable {
      * @return {?} Callback result.
      */
     function forEachFeatureAtCoordinate(managed, feature, layer) {
-      if (!(getUid(feature) in frameState.skippedFeatureUids && !managed)) {
-        return callback.call(thisArg, feature, managed ? layer : null);
-      }
+      return callback.call(thisArg, feature, managed ? layer : null);
     }
 
     const projection = viewState.projection;
 
     let translatedCoordinate = coordinate;
+    const offsets = [[0, 0]];
     if (projection.canWrapX()) {
       const projectionExtent = projection.getExtent();
       const worldWidth = getWidth(projectionExtent);
@@ -110,6 +111,9 @@ class MapRenderer extends Disposable {
       if (x < projectionExtent[0] || x > projectionExtent[2]) {
         const worldsAway = Math.ceil((projectionExtent[0] - x) / worldWidth);
         translatedCoordinate = [x + worldWidth * worldsAway, coordinate[1]];
+      }
+      if (checkWrapped) {
+        offsets.push([-worldWidth, 0], [worldWidth, 0]);
       }
     }
 
@@ -121,21 +125,27 @@ class MapRenderer extends Disposable {
         return entry.value;
       });
     }
-    let i;
-    for (i = numLayers - 1; i >= 0; --i) {
-      const layerState = layerStates[i];
-      const layer = /** @type {import("../layer/Layer.js").default} */ (layerState.layer);
-      if (layer.hasRenderer() && inView(layerState, viewState) && layerFilter.call(thisArg2, layer)) {
-        const layerRenderer = layer.getRenderer();
-        const source = layer.getSource();
-        if (layerRenderer && source) {
-          const callback = forEachFeatureAtCoordinate.bind(null, layerState.managed);
-          result = layerRenderer.forEachFeatureAtCoordinate(
-            source.getWrapX() ? translatedCoordinate : coordinate,
-            frameState, hitTolerance, callback, declutteredFeatures);
-        }
-        if (result) {
-          return result;
+
+    const tmpCoord = [];
+    for (let i = 0; i < offsets.length; i++) {
+      for (let j = numLayers - 1; j >= 0; --j) {
+        const layerState = layerStates[j];
+        const layer = /** @type {import("../layer/Layer.js").default} */ (layerState.layer);
+        if (layer.hasRenderer() && inView(layerState, viewState) && layerFilter.call(thisArg2, layer)) {
+          const layerRenderer = layer.getRenderer();
+          const source = layer.getSource();
+          const coordinates = source.getWrapX() ? translatedCoordinate : coordinate;
+          if (layerRenderer && source) {
+            const callback = forEachFeatureAtCoordinate.bind(null, layerState.managed);
+            tmpCoord[0] = coordinates[0] + offsets[i][0];
+            tmpCoord[1] = coordinates[1] + offsets[i][1];
+            result = layerRenderer.forEachFeatureAtCoordinate(
+              tmpCoord,
+              frameState, hitTolerance, callback, declutteredFeatures);
+          }
+          if (result) {
+            return result;
+          }
         }
       }
     }
@@ -164,6 +174,7 @@ class MapRenderer extends Disposable {
    * @param {import("../coordinate.js").Coordinate} coordinate Coordinate.
    * @param {import("../PluggableMap.js").FrameState} frameState FrameState.
    * @param {number} hitTolerance Hit tolerance in pixels.
+   * @param {boolean} checkWrapped Check for wrapped geometries.
    * @param {function(this: U, import("../layer/Layer.js").default): boolean} layerFilter Layer filter
    *     function, only layers which are visible and for which this function
    *     returns `true` will be tested for features.  By default, all visible
@@ -172,9 +183,9 @@ class MapRenderer extends Disposable {
    * @return {boolean} Is there a feature at the given coordinate?
    * @template U
    */
-  hasFeatureAtCoordinate(coordinate, frameState, hitTolerance, layerFilter, thisArg) {
+  hasFeatureAtCoordinate(coordinate, frameState, hitTolerance, checkWrapped, layerFilter, thisArg) {
     const hasFeature = this.forEachFeatureAtCoordinate(
-      coordinate, frameState, hitTolerance, TRUE, this, layerFilter, thisArg);
+      coordinate, frameState, hitTolerance, checkWrapped, TRUE, this, layerFilter, thisArg);
 
     return hasFeature !== undefined;
   }
