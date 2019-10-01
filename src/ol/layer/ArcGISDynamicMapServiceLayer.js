@@ -25,9 +25,6 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
    * @param {import("./BaseVector.js").Options=} opt_options Options.
    */
   constructor(opt_options) {
-    opt_options.metadata.maxScale = 1;
-    opt_options.metadata.minScale = 1;
-
     super(opt_options);
 
     /**
@@ -177,18 +174,37 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
           this.setLabels(labelStyles);
         }
 
-        this.layerInfo.layerId = layerResponce.id;
-        this.layerInfo.title = layerResponce.name;
+        if (!this.layerInfo.layerId) {
+          this.layerInfo.layerId = layerResponce.id;
+        }
+
+        if (!this.layerInfo.title) {
+          this.layerInfo.title = layerResponce.name;
+        }
+
         if (layerResponce.sourceSpatialReference) {
           this.layerInfo.sourceCRS = `EPSG:${layerResponce.sourceSpatialReference.wkid}`;
         }
 
-        this.layerInfo.geometryType = layerResponce.geometryType;
-        this.layerInfo.visible = layerResponce.defaultVisibility;
-        this.layerInfo.minScale = layerResponce.maxScale === 0 ? -Infinity : layerResponce.maxScale;
-        this.layerInfo.maxScale = layerResponce.minScale === 0 ? Infinity : layerResponce.minScale;
+        if (!this.layerInfo.geometryType) {
+          this.layerInfo.geometryType = layerResponce.geometryType;
+        }
 
-        this.layerInfo.fields = layerResponce.fields.map(field => new Field(field));
+        if (this.layerInfo.visible === undefined) {
+          this.layerInfo.visible = layerResponce.defaultVisibility;
+        }
+
+        if (!this.layerInfo.minScale) {
+          this.layerInfo.minScale = layerResponce.maxScale === 0 ? -Infinity : layerResponce.maxScale;
+        }
+
+        if (!this.layerInfo.maxScale) {
+          this.layerInfo.maxScale = layerResponce.minScale === 0 ? Infinity : layerResponce.minScale;
+        }
+
+        if (this.layerInfo.fields.length < 1) {
+          this.layerInfo.fields = layerResponce.fields.map(field => new Field(field));
+        }
         // this.layerInfo.relationships = layerResponce.relationships.map(rel => new Relationship(rel));
       });
   }
