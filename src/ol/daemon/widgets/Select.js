@@ -116,13 +116,16 @@ export default class SelectWidget extends Widget {
    * Activates Select Widget. This method only activates map interactions. You can use
    * `selectFeature`, `selectFeatures`, `deselectFeature`, `deselectFeatures` to select features
    * programmatically.
+   * @param {Boolean} [singleSelect]
    * @param {Boolean} [addToSelection] - if `true` any selected features will be added to the
    * existing selection array
    */
-  activate(addToSelection = false) {
+  activate(singleSelect = false, addToSelection = false) {
     this.addToSelection = addToSelection;
     this.active = true;
-    this._dragBoxInteraction.setActive(true);
+    if (!singleSelect) {
+      this._dragBoxInteraction.setActive(true);
+    }
   }
 
   /**
