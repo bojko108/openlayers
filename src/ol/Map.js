@@ -90,6 +90,7 @@ class Map extends PluggableMap {
     /**
      * @type {import('./layer/Base').default}
      */
+    // @ts-ignore
     this._defaultLayer = createOperationalLayer({
       metadata: { name: 'defaultLayer' }
     });
@@ -477,6 +478,7 @@ class Map extends PluggableMap {
    * @return {Number}
    */
   getScaleFromResolution(resolution, round) {
+    // @ts-ignore
     const mpu = METERS_PER_UNIT[this.getProjection().getUnits()],
       result = resolution * mpu * 39.37 * (25.4 / 0.28);
     return round === true ? Math.round(result) : result;
@@ -488,6 +490,7 @@ class Map extends PluggableMap {
    * @return {Number}
    */
   getResolutionFromScale(scale) {
+    // @ts-ignore
     let mpu = METERS_PER_UNIT[this.getProjection().getUnits()];
     return scale / (mpu * 39.37 * (25.4 / 0.28));
   }
@@ -514,15 +517,15 @@ class Map extends PluggableMap {
    */
   zoomTo(features, options = {}) {
     const extent = calculateFeaturesExtent(features);
-    this.zoomToExtent(extent, options);
+    this.zoomToExtent(extent, undefined, options);
   }
   /**
    * Zoom to an extent
    * @param {!import('./extent').Extent} extent
-   * @param {import('./View').FitOptions} [options={}] - additional parameters like padding, duration...
    * @param {Number} [zoomLevel=17]
+   * @param {import('./View').FitOptions} [options={}] - additional parameters like padding, duration...
    */
-  zoomToExtent(extent, options = {}, zoomLevel = 17) {
+  zoomToExtent(extent, zoomLevel = 17, options = {}) {
     if (extent[2] <= extent[0] || extent[3] <= extent[1]) {
       // in case of a point object
       this.center = [extent[0], extent[1]];

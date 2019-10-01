@@ -1,15 +1,15 @@
 /**
  * @module ol/Feature
  */
-import { assert } from "./asserts.js";
-import { listen, unlisten, unlistenByKey } from "./events.js";
-import EventType from "./events/EventType.js";
-import BaseObject, { getChangeEventType } from "./Object.js";
-import { getVectorContext } from "./render.js";
-import { easeOut } from "./easing.js";
+import { assert } from './asserts.js';
+import { listen, unlisten, unlistenByKey } from './events.js';
+import EventType from './events/EventType.js';
+import BaseObject, { getChangeEventType } from './Object.js';
+import { getVectorContext } from './render.js';
+import { easeOut } from './easing.js';
 
-import { createFeatureStyle, calculateCenterPointOfExtent } from "./daemon";
-import flashingOptions from "./daemon/helpers/flashingOptions.js";
+import { createFeatureStyle, calculateCenterPointOfExtent } from './daemon';
+import flashingOptions from './daemon/helpers/flashingOptions.js';
 
 /**
  * Indicates feature states - used when styling the feature before drawing it on the map. If `hidden = true`
@@ -125,7 +125,7 @@ class Feature extends BaseObject {
      * @type {string}
      * @private
      */
-    this.geometryName_ = "geometry";
+    this.geometryName_ = 'geometry';
 
     /**
      * User provided style.
@@ -149,7 +149,7 @@ class Feature extends BaseObject {
     listen(this, getChangeEventType(this.geometryName_), this.handleGeometryChanged_, this);
 
     if (opt_geometryOrProperties) {
-      if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === "function") {
+      if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === 'function') {
         const geometry = /** @type {Geometry} */ (opt_geometryOrProperties);
         this.setGeometry(geometry);
       } else {
@@ -397,7 +397,7 @@ class Feature extends BaseObject {
       }));
     } else {
       for (let name in props) {
-        if (name === "geometry") continue;
+        if (name === 'geometry') continue;
         result.push({
           name,
           alias: name,
@@ -411,10 +411,10 @@ class Feature extends BaseObject {
 
   /**
    * Zoom to this feature
-   * @param {import('./View').FitOptions} [options={}] - additional parameters like padding, duration...
    * @param {Number} [zoomLevel=17]
+   * @param {import('./View').FitOptions} [options={}] - additional parameters like padding, duration...
    */
-  zoomTo(options = {}, zoomLevel = 17) {
+  zoomTo(zoomLevel = 17, options = {}) {
     const extent = this.getGeometry().getExtent();
     if (extent[2] <= extent[0] || extent[3] <= extent[1]) {
       // in case of a point object
@@ -443,13 +443,13 @@ class Feature extends BaseObject {
       start = new Date().getTime(),
       flashedFeature = this.clone(),
       startFlashing = () => {
-        layer.on("postrender", animate);
+        layer.on('postrender', animate);
         layer.addFeature(flashedFeature);
         this.layer.map.render();
       },
       stopFlashing = () => {
         layer.removeFeature(flashedFeature);
-        layer.un("postrender", animate);
+        layer.un('postrender', animate);
       },
       animate = event => {
         const vectorContext = getVectorContext(event),
@@ -516,7 +516,7 @@ class Feature extends BaseObject {
  * @return {import("./style/Style.js").StyleFunction} A style function.
  */
 export function createStyleFunction(obj) {
-  if (typeof obj === "function") {
+  if (typeof obj === 'function') {
     return obj;
   } else {
     /**
@@ -526,7 +526,7 @@ export function createStyleFunction(obj) {
     if (Array.isArray(obj)) {
       styles = obj;
     } else {
-      assert(typeof /** @type {?} */ (obj).getZIndex === "function", 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+      assert(typeof /** @type {?} */ (obj).getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
       const style = /** @type {import("./style/Style.js").default} */ (obj);
       styles = [style];
     }

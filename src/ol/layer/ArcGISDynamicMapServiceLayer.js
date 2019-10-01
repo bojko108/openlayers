@@ -135,7 +135,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
               `{"xmin": ${extent[0]}, "ymin": ${extent[1]}, "xmax": ${extent[2]}, "ymax": ${extent[3]}, "spatialReference": ${outEPSGCode}}`
             );
 
-            const url = `${this.layerInfo.layerUrl}/query/?f=json&gdbVersion=${this.layerInfo.gdbVersion}&returngeometry=true&outFields=*&spatialRel=esriSpatialRelIntersects&geometry=${visibleExtent}&geometryType=esriGeometryEnvelope&inSR=${outEPSGCode}&outSR=${outEPSGCode}`;
+            const url = `${this.layerInfo.layerUrl}/query/?f=json&gdbVersion=${this.layerInfo.gdbVersion}&returnGeometry=true&outFields=*&spatialRel=esriSpatialRelIntersects&geometry=${visibleExtent}&geometryType=esriGeometryEnvelope&inSR=${outEPSGCode}&outSR=${outEPSGCode}`;
 
             axios
               .get(url)

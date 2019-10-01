@@ -221,9 +221,11 @@ class VectorLayer extends BaseVectorLayer {
       }
       if (featureStyle.style.getImage() instanceof Icon) {
         const iconSize = featureStyle.style.getImage().getSize();
-        const radius = (iconSize[0] + iconSize[1]) / 2 / 2;
-        // @ts-ignore
-        additionalStyle.getImage().setRadius(radius * 1.5);
+        if (iconSize) {
+          const radius = (iconSize[0] + iconSize[1]) / 2 / 2;
+          // @ts-ignore
+          additionalStyle.getImage().setRadius(radius * 1.5);
+        }
       }
 
       styles.push(additionalStyle);
