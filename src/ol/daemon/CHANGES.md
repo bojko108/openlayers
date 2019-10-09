@@ -1,5 +1,12 @@
+## Updating ol
 
 https://help.github.com/en/articles/syncing-a-fork
+
+```
+git checkout master
+git merge upstream/master
+git checkout mapdaemon
+```
 
 ## Added files
 

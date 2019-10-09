@@ -76,6 +76,7 @@ export default class ArcGISDynamicMapServiceLayer extends VectorLayer {
       const id = splitAtIndex(fid, fid.lastIndexOf('.'))[1];
       // @ts-ignore
       const features = await this.query({ where: `${this.layerInfo.objectIdField} = ${id}` });
+      this.addFeature(features[0]);
       return features[0];
     }
   }

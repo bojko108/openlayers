@@ -506,7 +506,7 @@ class Map extends PluggableMap {
       const [layerName] = splitAtIndex(fids[i], fids[i].lastIndexOf('.'));
       const layer = this.getLayer(layerName);
       // @ts-ignore
-      features.push(await layer.getFeatureById(fid[i]));
+      features.push(await layer.getFeatureById(fids[i]));
     }
     this.zoomTo(features, options);
   }
