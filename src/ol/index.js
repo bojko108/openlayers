@@ -32,6 +32,7 @@ export { default as View } from './View.js';
 
 export { getUid, VERSION } from './util.js';
 
+import * as geom from './geom.js';
 import * as daemon from './daemon';
 
-export { daemon };
+export { daemon, geom };
