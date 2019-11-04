@@ -84,7 +84,7 @@ class VectorLayer extends BaseVectorLayer {
    * only the loaded features.
    * @return {Array.<import('../Feature').default>}
    */
-  getFeatures() {
+  getLoadedFeatures() {
     return this.getSource().getFeatures();
   }
 
@@ -145,7 +145,7 @@ class VectorLayer extends BaseVectorLayer {
    * @return {Array<import('../Feature').default>}
    */
   find(filters) {
-    return this.getFeatures().filter(feature => {
+    return this.getLoadedFeatures().filter(feature => {
       return testFeature(feature, filters);
     });
   }

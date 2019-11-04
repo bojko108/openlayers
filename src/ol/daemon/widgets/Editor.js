@@ -349,7 +349,7 @@ export default class EditorWidget extends Widget {
       .filter(layer => layer.getVisible())
       .forEach(layer => {
         // @ts-ignore
-        const ftrs = layer.getFeatures();
+        const ftrs = layer.getLoadedFeatures();
         ftrs.forEach(f => {
           snappingFeatures.push(f);
         });
