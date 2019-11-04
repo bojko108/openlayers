@@ -12,8 +12,8 @@ import {createXYZ, extentFromProjection, createForProjection} from '../tilegrid.
 import {buffer as bufferExtent, getIntersection, intersects} from '../extent.js';
 import EventType from '../events/EventType.js';
 import {loadFeaturesXhr} from '../featureloader.js';
-import {isEmpty} from '../obj.js';
-import {equals} from '../array.js';
+import {equals, remove} from '../array.js';
+import {listen, unlistenByKey} from '../events.js';
 
 /**
  * @typedef {Object} Options
@@ -94,7 +94,7 @@ class VectorTile extends UrlTile {
 
     const tileGrid = options.tileGrid || createXYZ({
       extent: extent,
-      maxZoom: options.maxZoom || 22,
+      maxZoom: options.maxZoom !== undefined ? options.maxZoom : 22,
       minZoom: options.minZoom,
       tileSize: options.tileSize || 512
     });
@@ -239,34 +239,27 @@ class VectorTile extends UrlTile {
           }
           if (sourceTile.getState() !== TileState.EMPTY && tile.getState() === TileState.IDLE) {
             tile.loadingSourceTiles++;
-            const onSourceTileChange = function() {
+            const key = listen(sourceTile, EventType.CHANGE, function() {
               const state = sourceTile.getState();
               const sourceTileKey = sourceTile.getKey();
               if (state === TileState.LOADED || state === TileState.ERROR) {
                 if (state === TileState.LOADED) {
-                  sourceTile.removeEventListener(EventType.CHANGE, onSourceTileChange);
+                  remove(tile.sourceTileListenerKeys, key);
+                  unlistenByKey(key);
                   tile.loadingSourceTiles--;
-                  // eslint-disable-next-line no-use-before-define
-                  tile.removeEventListener(EventType.CHANGE, onTileChange);
                   delete tile.errorSourceTileKeys[sourceTileKey];
                 } else if (state === TileState.ERROR) {
                   tile.errorSourceTileKeys[sourceTileKey] = true;
                 }
-                if (tile.loadingSourceTiles - Object.keys(tile.errorSourceTileKeys).length === 0) {
-                  tile.hifi = true;
+                const errorTileCount = Object.keys(tile.errorSourceTileKeys).length;
+                if (tile.loadingSourceTiles - errorTileCount === 0) {
+                  tile.hifi = errorTileCount === 0;
                   tile.sourceZ = sourceZ;
-                  tile.setState(isEmpty(tile.errorSourceTileKeys) ? TileState.LOADED : TileState.ERROR);
+                  tile.setState(TileState.LOADED);
                 }
               }
-            };
-            const onTileChange = function() {
-              if (tile.getState() === TileState.ABORT) {
-                sourceTile.removeEventListener(EventType.CHANGE, onSourceTileChange);
-                tile.removeEventListener(EventType.CHANGE, onTileChange);
-              }
-            };
-            sourceTile.addEventListener(EventType.CHANGE, onSourceTileChange);
-            tile.addEventListener(EventType.CHANGE, onTileChange);
+            });
+            tile.sourceTileListenerKeys.push(key);
           }
         }.bind(this));
         if (!covered) {
@@ -387,8 +380,9 @@ class VectorTile extends UrlTile {
       // A tile grid that matches the tile size of the source tile grid is more
       // likely to have 1:1 relationships between source tiles and rendered tiles.
       const sourceTileGrid = this.tileGrid;
-      tileGrid = this.tileGrids_[code] = createForProjection(projection, undefined,
+      tileGrid = createForProjection(projection, undefined,
         sourceTileGrid ? sourceTileGrid.getTileSize(sourceTileGrid.getMinZoom()) : undefined);
+      this.tileGrids_[code] = tileGrid;
     }
     return tileGrid;
   }

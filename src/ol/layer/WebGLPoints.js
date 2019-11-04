@@ -3,8 +3,7 @@
  */
 import {assign} from '../obj.js';
 import WebGLPointsLayerRenderer from '../renderer/webgl/PointsLayer.js';
-import {getSymbolFragmentShader, getSymbolVertexShader, parseSymbolStyle} from '../webgl/ShaderBuilder.js';
-import {assert} from '../asserts.js';
+import {parseLiteralStyle} from '../webgl/ShaderBuilder.js';
 import Layer from './Layer.js';
 
 
@@ -25,6 +24,8 @@ import Layer from './Layer.js';
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
  * @property {import("../source/Vector.js").default} [source] Source.
+ * @property {boolean} [disableHitDetection] Setting this to true will provide a slight performance boost, but will
+ * prevent all hit detection on the layer.
  */
 
 
@@ -56,6 +57,9 @@ import Layer from './Layer.js';
  * }
  * ```
  *
+ * **Important: a `WebGLPoints` layer must be manually disposed when removed, otherwise the underlying WebGL context
+ * will not be garbage collected.**
+ *
  * Note that any property set in the options is set as a {@link module:ol/Object~BaseObject}
  * property on the layer object; for example, setting `title: 'My Title'` in the
  * options means that `title` is observable, and has get/set accessors.
@@ -72,25 +76,41 @@ class WebGLPointsLayer extends Layer {
     super(baseOptions);
 
     /**
-     * @type {import('../style/LiteralStyle.js').LiteralStyle}
+     * @private
+     * @type {import('../webgl/ShaderBuilder.js').StyleParseResult}
      */
-    this.style = options.style;
+    this.parseResult_ = parseLiteralStyle(options.style);
 
-    assert(this.style.symbol !== undefined, 65);
+    /**
+     * @private
+     * @type {boolean}
+     */
+    this.hitDetectionDisabled_ = !!options.disableHitDetection;
   }
 
   /**
    * @inheritDoc
    */
   createRenderer() {
-    const parseResult = parseSymbolStyle(this.style.symbol);
-
     return new WebGLPointsLayerRenderer(this, {
-      vertexShader: getSymbolVertexShader(parseResult.params),
-      fragmentShader: getSymbolFragmentShader(parseResult.params),
-      uniforms: parseResult.uniforms,
-      attributes: parseResult.attributes
+      vertexShader: this.parseResult_.builder.getSymbolVertexShader(),
+      fragmentShader: this.parseResult_.builder.getSymbolFragmentShader(),
+      hitVertexShader: !this.hitDetectionDisabled_ &&
+        this.parseResult_.builder.getSymbolVertexShader(true),
+      hitFragmentShader: !this.hitDetectionDisabled_ &&
+        this.parseResult_.builder.getSymbolFragmentShader(true),
+      uniforms: this.parseResult_.uniforms,
+      attributes: this.parseResult_.attributes
     });
+  }
+
+  /**
+   *
+   * @inheritDoc
+   */
+  disposeInternal() {
+    this.renderer_.dispose();
+    super.disposeInternal();
   }
 }
 

@@ -3,8 +3,8 @@
  */
 import {getUid} from './util.js';
 import Tile from './Tile.js';
-import TileState from './TileState.js';
 import {createCanvasContext2D} from './dom.js';
+import {unlistenByKey} from './events.js';
 
 
 /**
@@ -24,7 +24,7 @@ class VectorRenderTile extends Tile {
 
   /**
    * @param {import("./tilecoord.js").TileCoord} tileCoord Tile coordinate.
-   * @param {TileState} state State.
+   * @param {import("./TileState.js").default} state State.
    * @param {import("./tilecoord.js").TileCoord} urlTileCoord Wrapped tile coordinate for source urls.
    * @param {import("./tilegrid/TileGrid.js").default} sourceTileGrid Tile grid of the source.
    * @param {function(VectorRenderTile):Array<import("./VectorTile").default>} getSourceTiles Function
@@ -61,6 +61,11 @@ class VectorRenderTile extends Tile {
     this.errorSourceTileKeys = {};
 
     /**
+     * @type {ImageData}
+     */
+    this.hitDetectionImageData = null;
+
+    /**
      * @private
      * @type {!Object<string, ReplayState>}
      */
@@ -72,9 +77,9 @@ class VectorRenderTile extends Tile {
     this.wantedResolution;
 
     /**
-     * @type {!function(import("./VectorRenderTile.js").default):Array<import("./VectorTile.js").default>}
+     * @type {!function():Array<import("./VectorTile.js").default>}
      */
-    this.getSourceTiles_ = getSourceTiles;
+    this.getSourceTiles = getSourceTiles.bind(this, this);
 
     /**
      * @type {!function(import("./VectorRenderTile.js").default):void}
@@ -86,6 +91,11 @@ class VectorRenderTile extends Tile {
      * @type {import("./tilegrid/TileGrid.js").default}
      */
     this.sourceTileGrid_ = sourceTileGrid;
+
+    /**
+     * @type {Array<import("./events.js").EventsKey>}
+     */
+    this.sourceTileListenerKeys = [];
 
     /**
      * z of the source tiles of the last getSourceTiles call.
@@ -109,10 +119,13 @@ class VectorRenderTile extends Tile {
    * @inheritDoc
    */
   disposeInternal() {
+    this.sourceTileListenerKeys.forEach(unlistenByKey);
+    this.sourceTileListenerKeys.length = 0;
     this.removeSourceTiles_(this);
     for (const key in this.context_) {
       const canvas = this.context_[key].canvas;
-      canvas.width = canvas.height = 0;
+      canvas.width = 0;
+      canvas.height = 0;
     }
     for (const key in this.executorGroups) {
       const executorGroups = this.executorGroups[key];
@@ -120,7 +133,6 @@ class VectorRenderTile extends Tile {
         executorGroups[i].disposeInternal();
       }
     }
-    this.setState(TileState.ABORT);
     super.disposeInternal();
   }
 
@@ -178,7 +190,7 @@ class VectorRenderTile extends Tile {
    * @inheritDoc
    */
   load() {
-    this.getSourceTiles_(this);
+    this.getSourceTiles();
   }
 }
 

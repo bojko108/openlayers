@@ -27,27 +27,76 @@ const predefinedStyles = {
       symbolType: 'triangle',
       size: 18,
       color: [
-        ['stretch', ['get', 'population'], 20000, 300000, 0.1, 1.0],
-        ['stretch', ['get', 'population'], 20000, 300000, 0.6, 0.3],
-        0.6,
-        1.0
+        'interpolate',
+        ['linear'],
+        ['get', 'population'],
+        20000, '#5aca5b',
+        300000, '#ff6a19'
       ],
       rotateWithView: true
+    }
+  },
+  'triangles-latitude': {
+    symbol: {
+      symbolType: 'triangle',
+      size: [
+        'interpolate',
+        ['linear'],
+        ['get', 'population'],
+        40000, 12,
+        2000000, 24
+      ],
+      color: [
+        'interpolate',
+        ['linear'],
+        ['get', 'latitude'],
+        -60, '#ff14c3',
+        -20, '#ff621d',
+        20, '#ffed02',
+        60, '#00ff67'
+      ],
+      offset: [0, 0],
+      opacity: 0.95
     }
   },
   'circles': {
     symbol: {
       symbolType: 'circle',
-      size: ['stretch', ['get', 'population'], 40000, 2000000, 8, 28],
+      size: [
+        'interpolate',
+        ['linear'],
+        ['get', 'population'],
+        40000, 8,
+        2000000, 28
+      ],
       color: '#006688',
       rotateWithView: false,
       offset: [0, 0],
-      opacity: ['stretch', ['get', 'population'], 40000, 2000000, 0.6, 0.92]
+      opacity: [
+        'interpolate',
+        ['linear'],
+        ['get', 'population'],
+        40000, 0.6,
+        2000000, 0.92
+      ]
+    }
+  },
+  'circles-zoom': {
+    symbol: {
+      symbolType: 'circle',
+      size: [
+        'interpolate',
+        ['exponential', 2.5],
+        ['zoom'],
+        2, 1,
+        14, 32
+      ],
+      color: '#240572',
+      offset: [0, 0],
+      opacity: 0.95
     }
   }
 };
-let literalStyle = predefinedStyles['circles'];
-let pointsLayer;
 
 const map = new Map({
   layers: [
@@ -62,45 +111,59 @@ const map = new Map({
   })
 });
 
-const editor = document.getElementById('style-editor');
-editor.value = JSON.stringify(literalStyle, null, 2);
-
-function refreshLayer() {
-  if (pointsLayer) {
-    map.removeLayer(pointsLayer);
-  }
+let literalStyle;
+let pointsLayer;
+function refreshLayer(newStyle) {
+  const previousLayer = pointsLayer;
   pointsLayer = new WebGLPointsLayer({
     source: vectorSource,
-    style: literalStyle
+    style: newStyle,
+    disableHitDetection: true
   });
   map.addLayer(pointsLayer);
+
+  if (previousLayer) {
+    map.removeLayer(previousLayer);
+    previousLayer.dispose();
+  }
+  literalStyle = newStyle;
 }
 
-function setStyleStatus(valid) {
-  document.getElementById('style-valid').style.display = valid ? 'initial' : 'none';
-  document.getElementById('style-invalid').style.display = !valid ? 'initial' : 'none';
+const spanValid = document.getElementById('style-valid');
+const spanInvalid = document.getElementById('style-invalid');
+function setStyleStatus(errorMsg) {
+  const isError = typeof errorMsg === 'string';
+  spanValid.style.display = errorMsg === null ? 'initial' : 'none';
+  spanInvalid.firstElementChild.innerText = isError ? errorMsg : '';
+  spanInvalid.style.display = isError ? 'initial' : 'none';
 }
 
+const editor = document.getElementById('style-editor');
 editor.addEventListener('input', function() {
   const textStyle = editor.value;
-  if (JSON.stringify(JSON.parse(textStyle)) === JSON.stringify(literalStyle)) {
-    return;
-  }
-
   try {
-    literalStyle = JSON.parse(textStyle);
-    refreshLayer();
-    setStyleStatus(true);
+    const newLiteralStyle = JSON.parse(textStyle);
+    if (JSON.stringify(newLiteralStyle) !== JSON.stringify(literalStyle)) {
+      refreshLayer(newLiteralStyle);
+    }
+    setStyleStatus(null);
   } catch (e) {
-    setStyleStatus(false);
+    setStyleStatus(e.message);
   }
 });
-refreshLayer();
 
 const select = document.getElementById('style-select');
-select.addEventListener('change', function() {
+select.value = 'circles';
+function onSelectChange() {
   const style = select.value;
-  literalStyle = predefinedStyles[style];
-  editor.value = JSON.stringify(literalStyle, null, 2);
-  refreshLayer();
-});
+  const newLiteralStyle = predefinedStyles[style];
+  editor.value = JSON.stringify(newLiteralStyle, null, 2);
+  try {
+    refreshLayer(newLiteralStyle);
+    setStyleStatus();
+  } catch (e) {
+    setStyleStatus(e.message);
+  }
+}
+onSelectChange();
+select.addEventListener('change', onSelectChange);

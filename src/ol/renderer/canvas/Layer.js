@@ -7,7 +7,7 @@ import RenderEvent from '../../render/Event.js';
 import RenderEventType from '../../render/EventType.js';
 import {rotateAtOffset} from '../../render/canvas.js';
 import LayerRenderer from '../Layer.js';
-import {create as createTransform, apply as applyTransform, compose as composeTransform, toString as transformToString} from '../../transform.js';
+import {create as createTransform, apply as applyTransform, compose as composeTransform, toString} from '../../transform.js';
 
 /**
  * @abstract
@@ -69,12 +69,18 @@ class CanvasLayerRenderer extends LayerRenderer {
      */
     this.containerReused = false;
 
+    /**
+     * @type {HTMLCanvasElement}
+     * @private
+     */
+    this.createTransformStringCanvas_ = createCanvasContext2D(1, 1).canvas;
+
   }
 
   /**
    * Get a rendering container from an existing target, if compatible.
    * @param {HTMLElement} target Potential render target.
-   * @param {import("../../transform").Transform} transform Transform.
+   * @param {string} transform CSS Transform.
    * @param {number} opacity Opacity.
    */
   useContainer(target, transform, opacity) {
@@ -86,7 +92,7 @@ class CanvasLayerRenderer extends LayerRenderer {
         context = canvas.getContext('2d');
       }
     }
-    if (context && context.canvas.style.transform === transformToString(transform)) {
+    if (context && context.canvas.style.transform === transform) {
       // Container of the previous layer renderer can be used.
       this.container = target;
       this.context = context;
@@ -109,6 +115,7 @@ class CanvasLayerRenderer extends LayerRenderer {
       container.appendChild(canvas);
       style = canvas.style;
       style.position = 'absolute';
+      style.left = '0';
       style.transformOrigin = 'top left';
       this.container = container;
       this.context = context;
@@ -213,23 +220,24 @@ class CanvasLayerRenderer extends LayerRenderer {
 
   /**
    * Creates a transform for rendering to an element that will be rotated after rendering.
-   * @param {import("../../PluggableMap.js").FrameState} frameState Frame state.
+   * @param {import("../../coordinate.js").Coordinate} center Center.
+   * @param {number} resolution Resolution.
+   * @param {number} rotation Rotation.
+   * @param {number} pixelRatio Pixel ratio.
    * @param {number} width Width of the rendered element (in pixels).
    * @param {number} height Height of the rendered element (in pixels).
    * @param {number} offsetX Offset on the x-axis in view coordinates.
    * @protected
    * @return {!import("../../transform.js").Transform} Transform.
    */
-  getRenderTransform(frameState, width, height, offsetX) {
-    const viewState = frameState.viewState;
-    const pixelRatio = frameState.pixelRatio;
+  getRenderTransform(center, resolution, rotation, pixelRatio, width, height, offsetX) {
     const dx1 = width / 2;
     const dy1 = height / 2;
-    const sx = pixelRatio / viewState.resolution;
+    const sx = pixelRatio / resolution;
     const sy = -sx;
-    const dx2 = -viewState.center[0] + offsetX;
-    const dy2 = -viewState.center[1];
-    return composeTransform(this.tempTransform_, dx1, dy1, sx, sy, -viewState.rotation, dx2, dy2);
+    const dx2 = -center[0] + offsetX;
+    const dy2 = -center[1];
+    return composeTransform(this.tempTransform_, dx1, dy1, sx, sy, -rotation, dx2, dy2);
   }
 
   /**
@@ -259,6 +267,15 @@ class CanvasLayerRenderer extends LayerRenderer {
       return null;
     }
     return data;
+  }
+
+  /**
+   * @param {import("../../transform.js").Transform} transform Transform.
+   * @return {string} CSS transform.
+   */
+  createTransformString(transform) {
+    this.createTransformStringCanvas_.style.transform = toString(transform);
+    return this.createTransformStringCanvas_.style.transform;
   }
 
 }

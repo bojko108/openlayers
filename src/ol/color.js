@@ -30,7 +30,7 @@ const HEX_COLOR_RE_ = /^#([a-f0-9]{3}|[a-f0-9]{4}(?:[a-f0-9]{2}){0,2})$/i;
  * @type {RegExp}
  * @private
  */
-const NAMED_COLOR_RE_ = /^([a-z]*)$/i;
+const NAMED_COLOR_RE_ = /^([a-z]*)$|^hsla?\(.*\)$/i;
 
 
 /**
@@ -222,4 +222,15 @@ export function toString(color) {
   }
   const a = color[3] === undefined ? 1 : color[3];
   return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+/**
+ * @param {string} s String.
+ * @return {boolean} Whether the string is actually a valid color
+ */
+export function isStringColor(s) {
+  if (NAMED_COLOR_RE_.test(s)) {
+    s = fromNamed(s);
+  }
+  return HEX_COLOR_RE_.test(s) || s.indexOf('rgba(') === 0 || s.indexOf('rgb(') === 0;
 }

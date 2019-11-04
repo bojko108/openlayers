@@ -318,10 +318,23 @@ class Graticule extends VectorLayer {
         options.latLabelPosition;
 
       /**
-       * @type {Object.<string,Style>}
+       * @type {Style}
        * @private
        */
-      this.lonLabelStyleCache_ = {};
+      this.lonLabelStyleBase_ = new Style({
+        text: options.lonLabelStyle !== undefined ? options.lonLabelStyle.clone() :
+          new Text({
+            font: '12px Calibri,sans-serif',
+            textBaseline: 'bottom',
+            fill: new Fill({
+              color: 'rgba(0,0,0,1)'
+            }),
+            stroke: new Stroke({
+              color: 'rgba(255,255,255,1)',
+              width: 3
+            })
+          })
+      });
 
       /**
        * @private
@@ -330,31 +343,28 @@ class Graticule extends VectorLayer {
        */
       this.lonLabelStyle_ = function(feature) {
         const label = feature.get('graticule_label');
-        if (!this.lonLabelStyleCache_[label]) {
-          this.lonLabelStyleCache_[label] = new Style({
-            text: options.lonLabelStyle !== undefined ? options.lonLabelStyle :
-              new Text({
-                text: label,
-                font: '12px Calibri,sans-serif',
-                textBaseline: 'bottom',
-                fill: new Fill({
-                  color: 'rgba(0,0,0,1)'
-                }),
-                stroke: new Stroke({
-                  color: 'rgba(255,255,255,1)',
-                  width: 3
-                })
-              })
-          });
-        }
-        return this.lonLabelStyleCache_[label];
+        this.lonLabelStyleBase_.getText().setText(label);
+        return this.lonLabelStyleBase_;
       }.bind(this);
 
       /**
-       * @type {Object.<string,Style>}
+       * @type {Style}
        * @private
        */
-      this.latLabelStyleCache_ = {};
+      this.latLabelStyleBase_ = new Style({
+        text: options.latLabelStyle !== undefined ? options.latLabelStyle.clone() :
+          new Text({
+            font: '12px Calibri,sans-serif',
+            textAlign: 'right',
+            fill: new Fill({
+              color: 'rgba(0,0,0,1)'
+            }),
+            stroke: new Stroke({
+              color: 'rgba(255,255,255,1)',
+              width: 3
+            })
+          })
+      });
 
       /**
        * @private
@@ -363,24 +373,8 @@ class Graticule extends VectorLayer {
        */
       this.latLabelStyle_ = function(feature) {
         const label = feature.get('graticule_label');
-        if (!this.latLabelStyleCache_[label]) {
-          this.latLabelStyleCache_[label] = new Style({
-            text: options.latLabelStyle !== undefined ? options.latLabelStyle :
-              new Text({
-                text: label,
-                font: '12px Calibri,sans-serif',
-                textAlign: 'right',
-                fill: new Fill({
-                  color: 'rgba(0,0,0,1)'
-                }),
-                stroke: new Stroke({
-                  color: 'rgba(255,255,255,1)',
-                  width: 3
-                })
-              })
-          });
-        }
-        return this.latLabelStyleCache_[label];
+        this.latLabelStyleBase_.getText().setText(label);
+        return this.latLabelStyleBase_;
       }.bind(this);
 
       this.meridiansLabels_ = [];
@@ -421,7 +415,7 @@ class Graticule extends VectorLayer {
     });
 
     /**
-     * @type {import("../extent.js").Extent}
+     * @type {?import("../extent.js").Extent}
      */
     this.renderedExtent_ = null;
 
@@ -587,7 +581,8 @@ class Graticule extends VectorLayer {
   createGraticule_(extent, center, resolution, squaredTolerance) {
     const interval = this.getInterval_(resolution);
     if (interval == -1) {
-      this.meridians_.length = this.parallels_.length = 0;
+      this.meridians_.length = 0;
+      this.parallels_.length = 0;
       if (this.meridiansLabels_) {
         this.meridiansLabels_.length = 0;
       }
@@ -714,7 +709,8 @@ class Graticule extends VectorLayer {
     const flatCoordinates = meridian(lon, minLat, maxLat, this.projection_, squaredTolerance);
     let lineString = this.meridians_[index];
     if (!lineString) {
-      lineString = this.meridians_[index] = new LineString(flatCoordinates, GeometryLayout.XY);
+      lineString = new LineString(flatCoordinates, GeometryLayout.XY);
+      this.meridians_[index] = lineString;
     } else {
       lineString.setFlatCoordinates(GeometryLayout.XY, flatCoordinates);
       lineString.changed();

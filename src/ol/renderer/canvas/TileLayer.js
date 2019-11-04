@@ -7,7 +7,7 @@ import TileRange from '../../TileRange.js';
 import TileState from '../../TileState.js';
 import {createEmpty, equals, getIntersection, getTopLeft} from '../../extent.js';
 import CanvasLayerRenderer from './Layer.js';
-import {apply as applyTransform, compose as composeTransform, makeInverse, toString as transformToString} from '../../transform.js';
+import {apply as applyTransform, compose as composeTransform, makeInverse} from '../../transform.js';
 import {numberSafeCompareFunction} from '../../array.js';
 
 /**
@@ -31,9 +31,21 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
 
     /**
      * @private
-     * @type {import("../../extent.js").Extent}
+     * @type {?import("../../extent.js").Extent}
      */
     this.renderedExtent_ = null;
+
+    /**
+     * @protected
+     * @type {number}
+     */
+    this.renderedPixelRatio;
+
+    /**
+     * @protected
+     * @type {import("../../proj/Projection.js").default}
+     */
+    this.renderedProjection = null;
 
     /**
      * @protected
@@ -163,7 +175,8 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
 
     if (rotation) {
       const size = Math.round(Math.sqrt(width * width + height * height));
-      width = height = size;
+      width = size;
+      height = size;
     }
 
     const dx = tileResolution * width / 2 / tilePixelRatio;
@@ -230,7 +243,9 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       -width / 2, -height / 2
     );
 
-    this.useContainer(target, this.pixelTransform, layerState.opacity);
+    const canvasTransform = this.createTransformString(this.pixelTransform);
+
+    this.useContainer(target, canvasTransform, layerState.opacity);
     const context = this.context;
     const canvas = context.canvas;
 
@@ -342,6 +357,8 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
     this.renderedResolution = tileResolution;
     this.extentChanged = !this.renderedExtent_ || !equals(this.renderedExtent_, canvasExtent);
     this.renderedExtent_ = canvasExtent;
+    this.renderedPixelRatio = pixelRatio;
+    this.renderedProjection = projection;
 
     this.manageTilePyramid(frameState, tileSource, tileGrid, pixelRatio,
       projection, extent, z, tileLayer.getPreload());
@@ -354,7 +371,6 @@ class CanvasTileLayerRenderer extends CanvasLayerRenderer {
       context.restore();
     }
 
-    const canvasTransform = transformToString(this.pixelTransform);
     if (canvasTransform !== canvas.style.transform) {
       canvas.style.transform = canvasTransform;
     }

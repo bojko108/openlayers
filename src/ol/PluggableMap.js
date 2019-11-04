@@ -126,6 +126,16 @@ import LayerProperty from './layer/Property.js';
  */
 
 /**
+ * @param {HTMLElement} element Element.
+ * @param {string} touchAction Value for `touch-action'.
+ */
+function setTouchAction(element, touchAction) {
+  element.style.msTouchAction = touchAction;
+  element.style.touchAction = touchAction;
+  element.setAttribute('touch-action', touchAction);
+}
+
+/**
  * @fires import("./MapBrowserEvent.js").MapBrowserEvent
  * @fires import("./MapEvent.js").MapEvent
  * @fires import("./render/Event.js").default#precompose
@@ -236,9 +246,6 @@ class PluggableMap extends BaseObject {
     this.viewport_.style.overflow = 'hidden';
     this.viewport_.style.width = '100%';
     this.viewport_.style.height = '100%';
-    // prevent page zoom on IE >= 10 browsers
-    this.viewport_.style.msTouchAction = 'none';
-    this.viewport_.style.touchAction = 'none';
 
     /**
      * @private
@@ -286,6 +293,12 @@ class PluggableMap extends BaseObject {
      */
     this.keyHandlerKeys_ = null;
 
+    /**
+     * @private
+     * @type {?Array<import("./events.js").EventsKey>}
+     */
+    this.focusHandlerKeys_ = null;
+
     const handleBrowserEvent = this.handleBrowserEvent.bind(this);
     this.viewport_.addEventListener(EventType.CONTEXTMENU, handleBrowserEvent, false);
     this.viewport_.addEventListener(EventType.WHEEL, handleBrowserEvent, false);
@@ -301,16 +314,6 @@ class PluggableMap extends BaseObject {
      * @protected
      */
     this.interactions = optionsInternal.interactions || new Collection();
-
-    /**
-     * @type {import("./events/Target.js").default}
-     */
-    this.labelCache_ = null;
-
-    /**
-     * @type {import("./events.js").EventsKey}
-     */
-    this.labelCacheListenerKey_;
 
     /**
      * @type {Collection<import("./Overlay.js").default>}
@@ -332,7 +335,7 @@ class PluggableMap extends BaseObject {
     this.renderer_ = null;
 
     /**
-     * @type {function(Event): void|undefined}
+     * @type {undefined|function(Event): void}
      * @private
      */
     this.handleResize_;
@@ -552,7 +555,7 @@ class PluggableMap extends BaseObject {
       return;
     }
     const coordinate = this.getCoordinateFromPixelInternal(pixel);
-    opt_options = opt_options !== undefined ? opt_options : /** @type {AtPixelOptions} */ ({});
+    opt_options = opt_options !== undefined ? opt_options : {};
     const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
     const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
     const checkWrapped = opt_options.checkWrapped !== false;
@@ -604,7 +607,7 @@ class PluggableMap extends BaseObject {
     if (!this.frameState_) {
       return;
     }
-    const options = opt_options || /** @type {AtPixelOptions} */ ({});
+    const options = opt_options || {};
     const hitTolerance = options.hitTolerance !== undefined ? options.hitTolerance * this.frameState_.pixelRatio : 0;
     const layerFilter = options.layerFilter || TRUE;
     return this.renderer_.forEachLayerAtPixel(pixel, this.frameState_, hitTolerance, callback, layerFilter);
@@ -623,7 +626,7 @@ class PluggableMap extends BaseObject {
       return false;
     }
     const coordinate = this.getCoordinateFromPixelInternal(pixel);
-    opt_options = opt_options !== undefined ? opt_options : /** @type {AtPixelOptions} */ ({});
+    opt_options = opt_options !== undefined ? opt_options : {};
     const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
     const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
     const checkWrapped = opt_options.checkWrapped !== false;
@@ -1031,6 +1034,12 @@ class PluggableMap extends BaseObject {
       targetElement = this.getTargetElement();
     }
 
+    if (this.focusHandlerKeys_) {
+      for (let i = 0, ii = this.focusHandlerKeys_.length; i < ii; ++i) {
+        unlistenByKey(this.focusHandlerKeys_[i]);
+      }
+      this.focusHandlerKeys_ = null;
+    }
     if (this.keyHandlerKeys_) {
       for (let i = 0, ii = this.keyHandlerKeys_.length; i < ii; ++i) {
         unlistenByKey(this.keyHandlerKeys_[i]);
@@ -1059,6 +1068,15 @@ class PluggableMap extends BaseObject {
       if (!this.renderer_) {
         this.renderer_ = this.createRenderer();
       }
+      let hasFocus = true;
+      if (targetElement.hasAttribute('tabindex')) {
+        hasFocus = document.activeElement === targetElement;
+        this.focusHandlerKeys_ = [
+          listen(targetElement, EventType.FOCUS, setTouchAction.bind(this, this.viewport_, 'none')),
+          listen(targetElement, EventType.BLUR, setTouchAction.bind(this, this.viewport_, 'auto'))
+        ];
+      }
+      setTouchAction(this.viewport_, hasFocus ? 'none' : 'auto');
 
       const keyboardEventTarget = !this.keyboardEventTarget_ ? targetElement : this.keyboardEventTarget_;
       this.keyHandlerKeys_ = [

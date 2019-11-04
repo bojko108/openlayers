@@ -45,7 +45,6 @@ import SourceState from '../source/State.js';
  * @property {SourceState} sourceState
  * @property {boolean} visible
  * @property {boolean} managed
- * @property {boolean} hasOverlay Set by the renderer when an overlay for points and text is used.
  * @property {import("../extent.js").Extent} [extent]
  * @property {number} zIndex
  * @property {number} maxResolution
@@ -191,6 +190,15 @@ class Layer extends BaseLayer {
   }
 
   /**
+   * @param {import("../pixel").Pixel} pixel Pixel.
+   * @return {Promise<Array<import("../Feature").default>>} Promise that resolves with
+   * an array of features.
+   */
+  getFeatures(pixel) {
+    return this.renderer_.getFeatures(pixel);
+  }
+
+  /**
    * In charge to manage the rendering of the layer. One layer type is
    * bounded with one layer renderer.
    * @param {?import("../PluggableMap.js").FrameState} frameState Frame state.
@@ -285,6 +293,14 @@ class Layer extends BaseLayer {
    */
   createRenderer() {
     return null;
+  }
+
+  /**
+   * @inheritDoc
+   */
+  disposeInternal() {
+    this.setSource(null);
+    super.disposeInternal();
   }
 }
 

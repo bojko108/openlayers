@@ -42,7 +42,10 @@ export const ShaderType = {
 export const DefaultUniform = {
   PROJECTION_MATRIX: 'u_projectionMatrix',
   OFFSET_SCALE_MATRIX: 'u_offsetScaleMatrix',
-  OFFSET_ROTATION_MATRIX: 'u_offsetRotateMatrix'
+  OFFSET_ROTATION_MATRIX: 'u_offsetRotateMatrix',
+  TIME: 'u_time',
+  ZOOM: 'u_zoom',
+  RESOLUTION: 'u_resolution'
 };
 
 /**
@@ -247,6 +250,7 @@ class WebGLHelper extends Disposable {
      */
     this.canvas_ = document.createElement('canvas');
     this.canvas_.style.position = 'absolute';
+    this.canvas_.style.left = '0';
 
 
     /**
@@ -261,18 +265,6 @@ class WebGLHelper extends Disposable {
      * @type {!Object<string, BufferCacheEntry>}
      */
     this.bufferCache_ = {};
-
-    /**
-     * @private
-     * @type {!Array<WebGLShader>}
-     */
-    this.shaderCache_ = [];
-
-    /**
-     * @private
-     * @type {!Array<WebGLProgram>}
-     */
-    this.programCache_ = [];
 
     /**
      * @private
@@ -354,6 +346,12 @@ class WebGLHelper extends Disposable {
      * @private
      */
     this.shaderCompileErrors_ = null;
+
+    /**
+     * @type {number}
+     * @private
+     */
+    this.startTime_ = Date.now();
   }
 
   /**
@@ -369,10 +367,11 @@ class WebGLHelper extends Disposable {
     let bufferCache = this.bufferCache_[bufferKey];
     if (!bufferCache) {
       const webGlBuffer = gl.createBuffer();
-      bufferCache = this.bufferCache_[bufferKey] = {
+      bufferCache = {
         buffer: buffer,
         webGlBuffer: webGlBuffer
       };
+      this.bufferCache_[bufferKey] = bufferCache;
     }
     gl.bindBuffer(buffer.getType(), bufferCache.webGlBuffer);
   }
@@ -408,18 +407,6 @@ class WebGLHelper extends Disposable {
   disposeInternal() {
     this.canvas_.removeEventListener(ContextEventType.LOST, this.boundHandleWebGLContextLost_);
     this.canvas_.removeEventListener(ContextEventType.RESTORED, this.boundHandleWebGLContextRestored_);
-    const gl = this.getGL();
-    if (!gl.isContextLost()) {
-      for (const key in this.bufferCache_) {
-        gl.deleteBuffer(this.bufferCache_[key].buffer);
-      }
-      for (const key in this.programCache_) {
-        gl.deleteProgram(this.programCache_[key]);
-      }
-      for (const key in this.shaderCache_) {
-        gl.deleteShader(this.shaderCache_[key]);
-      }
-    }
   }
 
   /**
@@ -469,9 +456,10 @@ class WebGLHelper extends Disposable {
    */
   prepareDrawToRenderTarget(frameState, renderTarget, opt_disableAlphaBlend) {
     const gl = this.getGL();
+    const size = renderTarget.getSize();
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget.getFramebuffer());
-    gl.viewport(0, 0, frameState.size[0], frameState.size[1]);
+    gl.viewport(0, 0, size[0], size[1]);
     gl.bindTexture(gl.TEXTURE_2D, renderTarget.getTexture());
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -547,6 +535,10 @@ class WebGLHelper extends Disposable {
 
     this.setUniformMatrixValue(DefaultUniform.OFFSET_SCALE_MATRIX, fromTransform(this.tmpMat4_, offsetScaleMatrix));
     this.setUniformMatrixValue(DefaultUniform.OFFSET_ROTATION_MATRIX, fromTransform(this.tmpMat4_, offsetRotateMatrix));
+
+    this.setUniformFloatValue(DefaultUniform.TIME, (Date.now() - this.startTime_) * 0.001);
+    this.setUniformFloatValue(DefaultUniform.ZOOM, frameState.viewState.zoom);
+    this.setUniformFloatValue(DefaultUniform.RESOLUTION, frameState.viewState.resolution);
   }
 
   /**
@@ -637,7 +629,6 @@ class WebGLHelper extends Disposable {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    this.shaderCache_.push(shader);
     return shader;
   }
 
@@ -669,7 +660,6 @@ class WebGLHelper extends Disposable {
     gl.attachShader(program, fragmentShader);
     gl.attachShader(program, vertexShader);
     gl.linkProgram(program);
-    this.programCache_.push(program);
     return program;
   }
 
@@ -796,8 +786,6 @@ class WebGLHelper extends Disposable {
    */
   handleWebGLContextLost() {
     clear(this.bufferCache_);
-    clear(this.shaderCache_);
-    clear(this.programCache_);
     this.currentProgram_ = null;
   }
 
@@ -807,8 +795,6 @@ class WebGLHelper extends Disposable {
    */
   handleWebGLContextRestored() {
   }
-
-  // TODO: shutdown program
 
   /**
    * Will create or reuse a given webgl texture and apply the given size. If no image data
