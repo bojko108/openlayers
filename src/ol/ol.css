@@ -92,6 +92,14 @@
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
+.ol-overlaycontainer, .ol-overlaycontainer-stopevent {
+  pointer-events: none;
+}
+
+.ol-overlaycontainer>*, .ol-overlaycontainer-stopevent>* {
+  pointer-events: auto;
+}
+
 .ol-selectable {
   -webkit-touch-callout: default;
   -webkit-user-select: text;
@@ -171,6 +179,10 @@
 .ol-control button::-moz-focus-inner {
   border: none;
   padding: 0;
+}
+
+.ol-control button span {
+  pointer-events: none;
 }
 
 .ol-zoom-extent button {

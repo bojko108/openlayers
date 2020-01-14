@@ -4,8 +4,10 @@ https://help.github.com/en/articles/syncing-a-fork
 
 ```
 git checkout master
-git merge upstream/master
+git pull upstream
+git merge --no-ff upstream/master
 git checkout mapdaemon
+git merge --no-ff master
 ```
 
 ## Added files

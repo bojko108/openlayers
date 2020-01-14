@@ -1,34 +1,46 @@
 /**
  * @module ol/PluggableMap
  */
-import { getUid } from './util.js';
-import Collection from './Collection.js';
-import CollectionEventType from './CollectionEventType.js';
-import MapBrowserEvent from './MapBrowserEvent.js';
-import MapBrowserEventHandler from './MapBrowserEventHandler.js';
-import MapBrowserEventType from './MapBrowserEventType.js';
-import MapEvent from './MapEvent.js';
-import MapEventType from './MapEventType.js';
-import MapProperty from './MapProperty.js';
-import RenderEventType from './render/EventType.js';
-import BaseObject, { getChangeEventType } from './Object.js';
-import ObjectEventType from './ObjectEventType.js';
-import TileQueue from './TileQueue.js';
-import View from './View.js';
-import ViewHint from './ViewHint.js';
-import { assert } from './asserts.js';
-import { removeNode } from './dom.js';
-import { listen, unlistenByKey } from './events.js';
-import EventType from './events/EventType.js';
-import { createEmpty, clone, createOrUpdateEmpty, equals, getForViewAndSize, isEmpty } from './extent.js';
-import { TRUE } from './functions.js';
-import { DEVICE_PIXEL_RATIO, IMAGE_DECODE } from './has.js';
-import LayerGroup from './layer/Group.js';
-import { hasArea } from './size.js';
-import { DROP } from './structs/PriorityQueue.js';
-import { create as createTransform, apply as applyTransform } from './transform.js';
-import { toUserCoordinate, fromUserCoordinate } from './proj.js';
-import LayerProperty from './layer/Property.js';
+import Collection from "./Collection.js";
+import CollectionEventType from "./CollectionEventType.js";
+import MapBrowserEvent from "./MapBrowserEvent.js";
+import MapBrowserEventHandler from "./MapBrowserEventHandler.js";
+import MapBrowserEventType from "./MapBrowserEventType.js";
+import MapEvent from "./MapEvent.js";
+import MapEventType from "./MapEventType.js";
+import MapProperty from "./MapProperty.js";
+import RenderEventType from "./render/EventType.js";
+import BaseObject, { getChangeEventType } from "./Object.js";
+import ObjectEventType from "./ObjectEventType.js";
+import TileQueue from "./TileQueue.js";
+import View from "./View.js";
+import ViewHint from "./ViewHint.js";
+import { assert } from "./asserts.js";
+import { removeNode } from "./dom.js";
+import { listen, unlistenByKey } from "./events.js";
+import EventType from "./events/EventType.js";
+import {
+  clone,
+  createOrUpdateEmpty,
+  equals,
+  getForViewAndSize,
+  isEmpty
+} from "./extent.js";
+import { TRUE } from "./functions.js";
+import {
+  DEVICE_PIXEL_RATIO,
+  IMAGE_DECODE,
+  PASSIVE_EVENT_LISTENERS
+} from "./has.js";
+import LayerGroup from "./layer/Group.js";
+import { hasArea } from "./size.js";
+import { DROP } from "./structs/PriorityQueue.js";
+import {
+  create as createTransform,
+  apply as applyTransform
+} from "./transform.js";
+import { toUserCoordinate, fromUserCoordinate } from "./proj.js";
+import LayerProperty from "./layer/Property.js";
 
 /**
  * State of the current frame. Only `pixelRatio`, `time` and `viewState` should
@@ -126,16 +138,6 @@ import LayerProperty from './layer/Property.js';
  */
 
 /**
- * @param {HTMLElement} element Element.
- * @param {string} touchAction Value for `touch-action'.
- */
-function setTouchAction(element, touchAction) {
-  element.style.msTouchAction = touchAction;
-  element.style.touchAction = touchAction;
-  element.setAttribute('touch-action', touchAction);
-}
-
-/**
  * @fires import("./MapBrowserEvent.js").MapBrowserEvent
  * @fires import("./MapEvent.js").MapEvent
  * @fires import("./render/Event.js").default#precompose
@@ -159,13 +161,17 @@ class PluggableMap extends BaseObject {
      * @type {number}
      * @private
      */
-    this.maxTilesLoading_ = options.maxTilesLoading !== undefined ? options.maxTilesLoading : 16;
+    this.maxTilesLoading_ =
+      options.maxTilesLoading !== undefined ? options.maxTilesLoading : 16;
 
     /**
      * @private
      * @type {number}
      */
-    this.pixelRatio_ = options.pixelRatio !== undefined ? options.pixelRatio : DEVICE_PIXEL_RATIO;
+    this.pixelRatio_ =
+      options.pixelRatio !== undefined
+        ? options.pixelRatio
+        : DEVICE_PIXEL_RATIO;
 
     /**
      * @private
@@ -240,45 +246,52 @@ class PluggableMap extends BaseObject {
      * @private
      * @type {!HTMLElement}
      */
-    this.viewport_ = document.createElement('div');
-    this.viewport_.className = 'ol-viewport' + ('ontouchstart' in window ? ' ol-touch' : '');
-    this.viewport_.style.position = 'relative';
-    this.viewport_.style.overflow = 'hidden';
-    this.viewport_.style.width = '100%';
-    this.viewport_.style.height = '100%';
+    this.viewport_ = document.createElement("div");
+    this.viewport_.className =
+      "ol-viewport" + ("ontouchstart" in window ? " ol-touch" : "");
+    this.viewport_.style.position = "relative";
+    this.viewport_.style.overflow = "hidden";
+    this.viewport_.style.width = "100%";
+    this.viewport_.style.height = "100%";
 
     /**
      * @private
      * @type {!HTMLElement}
      */
-    this.overlayContainer_ = document.createElement('div');
-    this.overlayContainer_.style.position = 'absolute';
-    this.overlayContainer_.style.zIndex = '0';
-    this.overlayContainer_.style.width = '100%';
-    this.overlayContainer_.style.height = '100%';
-    this.overlayContainer_.className = 'ol-overlaycontainer';
+    this.overlayContainer_ = document.createElement("div");
+    this.overlayContainer_.style.position = "absolute";
+    this.overlayContainer_.style.zIndex = "0";
+    this.overlayContainer_.style.width = "100%";
+    this.overlayContainer_.style.height = "100%";
+    this.overlayContainer_.className = "ol-overlaycontainer";
     this.viewport_.appendChild(this.overlayContainer_);
 
     /**
      * @private
      * @type {!HTMLElement}
      */
-    this.overlayContainerStopEvent_ = document.createElement('div');
-    this.overlayContainerStopEvent_.style.position = 'absolute';
-    this.overlayContainerStopEvent_.style.zIndex = '0';
-    this.overlayContainerStopEvent_.style.width = '100%';
-    this.overlayContainerStopEvent_.style.height = '100%';
-    this.overlayContainerStopEvent_.className = 'ol-overlaycontainer-stopevent';
+    this.overlayContainerStopEvent_ = document.createElement("div");
+    this.overlayContainerStopEvent_.style.position = "absolute";
+    this.overlayContainerStopEvent_.style.zIndex = "0";
+    this.overlayContainerStopEvent_.style.width = "100%";
+    this.overlayContainerStopEvent_.style.height = "100%";
+    this.overlayContainerStopEvent_.className = "ol-overlaycontainer-stopevent";
     this.viewport_.appendChild(this.overlayContainerStopEvent_);
 
     /**
      * @private
      * @type {MapBrowserEventHandler}
      */
-    this.mapBrowserEventHandler_ = new MapBrowserEventHandler(this, options.moveTolerance);
+    this.mapBrowserEventHandler_ = new MapBrowserEventHandler(
+      this,
+      options.moveTolerance
+    );
     const handleMapBrowserEvent = this.handleMapBrowserEvent.bind(this);
     for (const key in MapBrowserEventType) {
-      this.mapBrowserEventHandler_.addEventListener(MapBrowserEventType[key], handleMapBrowserEvent);
+      this.mapBrowserEventHandler_.addEventListener(
+        MapBrowserEventType[key],
+        handleMapBrowserEvent
+      );
     }
 
     /**
@@ -293,15 +306,17 @@ class PluggableMap extends BaseObject {
      */
     this.keyHandlerKeys_ = null;
 
-    /**
-     * @private
-     * @type {?Array<import("./events.js").EventsKey>}
-     */
-    this.focusHandlerKeys_ = null;
-
     const handleBrowserEvent = this.handleBrowserEvent.bind(this);
-    this.viewport_.addEventListener(EventType.CONTEXTMENU, handleBrowserEvent, false);
-    this.viewport_.addEventListener(EventType.WHEEL, handleBrowserEvent, false);
+    this.viewport_.addEventListener(
+      EventType.CONTEXTMENU,
+      handleBrowserEvent,
+      false
+    );
+    this.viewport_.addEventListener(
+      EventType.WHEEL,
+      handleBrowserEvent,
+      PASSIVE_EVENT_LISTENERS ? { passive: false } : false
+    );
 
     /**
      * @type {Collection<import("./control/Control.js").default>}
@@ -350,12 +365,27 @@ class PluggableMap extends BaseObject {
      * @private
      * @type {TileQueue}
      */
-    this.tileQueue_ = new TileQueue(this.getTilePriority.bind(this), this.handleTileChange_.bind(this));
+    this.tileQueue_ = new TileQueue(
+      this.getTilePriority.bind(this),
+      this.handleTileChange_.bind(this)
+    );
 
-    this.addEventListener(getChangeEventType(MapProperty.LAYERGROUP), this.handleLayerGroupChanged_);
-    this.addEventListener(getChangeEventType(MapProperty.VIEW), this.handleViewChanged_);
-    this.addEventListener(getChangeEventType(MapProperty.SIZE), this.handleSizeChanged_);
-    this.addEventListener(getChangeEventType(MapProperty.TARGET), this.handleTargetChanged_);
+    this.addEventListener(
+      getChangeEventType(MapProperty.LAYERGROUP),
+      this.handleLayerGroupChanged_
+    );
+    this.addEventListener(
+      getChangeEventType(MapProperty.VIEW),
+      this.handleViewChanged_
+    );
+    this.addEventListener(
+      getChangeEventType(MapProperty.SIZE),
+      this.handleSizeChanged_
+    );
+    this.addEventListener(
+      getChangeEventType(MapProperty.TARGET),
+      this.handleTargetChanged_
+    );
 
     // setProperties will trigger the rendering of the map if the map
     // is "defined" already.
@@ -429,7 +459,9 @@ class PluggableMap extends BaseObject {
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
-        this.addOverlayInternal_(/** @type {import("./Overlay.js").default} */ (event.element));
+        this.addOverlayInternal_(
+          /** @type {import("./Overlay.js").default} */ (event.element)
+        );
       }.bind(this)
     );
 
@@ -439,7 +471,8 @@ class PluggableMap extends BaseObject {
        * @param {import("./Collection.js").CollectionEvent} event CollectionEvent.
        */
       function(event) {
-        const overlay = /** @type {import("./Overlay.js").default} */ (event.element);
+        const overlay =
+          /** @type {import("./Overlay.js").default} */ (event.element);
         const id = overlay.getId();
         if (id !== undefined) {
           delete this.overlayIdIndex_[id.toString()];
@@ -454,7 +487,7 @@ class PluggableMap extends BaseObject {
    * @return {import("./renderer/Map.js").default} The map renderer
    */
   createRenderer() {
-    throw new Error('Use a map type that has a createRenderer method');
+    throw new Error("Use a map type that has a createRenderer method");
   }
 
   /**
@@ -521,8 +554,14 @@ class PluggableMap extends BaseObject {
    */
   disposeInternal() {
     this.mapBrowserEventHandler_.dispose();
-    this.viewport_.removeEventListener(EventType.CONTEXTMENU, this.boundHandleBrowserEvent_);
-    this.viewport_.removeEventListener(EventType.WHEEL, this.boundHandleBrowserEvent_);
+    this.viewport_.removeEventListener(
+      EventType.CONTEXTMENU,
+      this.boundHandleBrowserEvent_
+    );
+    this.viewport_.removeEventListener(
+      EventType.WHEEL,
+      this.boundHandleBrowserEvent_
+    );
     if (this.handleResize_ !== undefined) {
       removeEventListener(EventType.RESIZE, this.handleResize_, false);
       this.handleResize_ = undefined;
@@ -556,10 +595,23 @@ class PluggableMap extends BaseObject {
     }
     const coordinate = this.getCoordinateFromPixelInternal(pixel);
     opt_options = opt_options !== undefined ? opt_options : {};
-    const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
-    const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
+    const hitTolerance =
+      opt_options.hitTolerance !== undefined
+        ? opt_options.hitTolerance * this.frameState_.pixelRatio
+        : 0;
+    const layerFilter =
+      opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
     const checkWrapped = opt_options.checkWrapped !== false;
-    return this.renderer_.forEachFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, checkWrapped, callback, null, layerFilter, null);
+    return this.renderer_.forEachFeatureAtCoordinate(
+      coordinate,
+      this.frameState_,
+      hitTolerance,
+      checkWrapped,
+      callback,
+      null,
+      layerFilter,
+      null
+    );
   }
 
   /**
@@ -608,9 +660,18 @@ class PluggableMap extends BaseObject {
       return;
     }
     const options = opt_options || {};
-    const hitTolerance = options.hitTolerance !== undefined ? options.hitTolerance * this.frameState_.pixelRatio : 0;
+    const hitTolerance =
+      options.hitTolerance !== undefined
+        ? options.hitTolerance * this.frameState_.pixelRatio
+        : 0;
     const layerFilter = options.layerFilter || TRUE;
-    return this.renderer_.forEachLayerAtPixel(pixel, this.frameState_, hitTolerance, callback, layerFilter);
+    return this.renderer_.forEachLayerAtPixel(
+      pixel,
+      this.frameState_,
+      hitTolerance,
+      callback,
+      layerFilter
+    );
   }
 
   /**
@@ -627,10 +688,21 @@ class PluggableMap extends BaseObject {
     }
     const coordinate = this.getCoordinateFromPixelInternal(pixel);
     opt_options = opt_options !== undefined ? opt_options : {};
-    const layerFilter = opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
-    const hitTolerance = opt_options.hitTolerance !== undefined ? opt_options.hitTolerance * this.frameState_.pixelRatio : 0;
+    const layerFilter =
+      opt_options.layerFilter !== undefined ? opt_options.layerFilter : TRUE;
+    const hitTolerance =
+      opt_options.hitTolerance !== undefined
+        ? opt_options.hitTolerance * this.frameState_.pixelRatio
+        : 0;
     const checkWrapped = opt_options.checkWrapped !== false;
-    return this.renderer_.hasFeatureAtCoordinate(coordinate, this.frameState_, hitTolerance, checkWrapped, layerFilter, null);
+    return this.renderer_.hasFeatureAtCoordinate(
+      coordinate,
+      this.frameState_,
+      hitTolerance,
+      checkWrapped,
+      layerFilter,
+      null
+    );
   }
 
   /**
@@ -660,9 +732,15 @@ class PluggableMap extends BaseObject {
    */
   getEventPixel(event) {
     const viewportPosition = this.viewport_.getBoundingClientRect();
-    const eventPosition = 'changedTouches' in event ? /** @type {TouchEvent} */ (event).changedTouches[0] : /** @type {MouseEvent} */ (event);
+    const eventPosition =
+      "changedTouches" in event
+        ? /** @type {TouchEvent} */ (event).changedTouches[0]
+        : /** @type {MouseEvent} */ (event);
 
-    return [eventPosition.clientX - viewportPosition.left, eventPosition.clientY - viewportPosition.top];
+    return [
+      eventPosition.clientX - viewportPosition.left,
+      eventPosition.clientY - viewportPosition.top
+    ];
   }
 
   /**
@@ -675,7 +753,9 @@ class PluggableMap extends BaseObject {
    * @api
    */
   getTarget() {
-    return /** @type {HTMLElement|string|undefined} */ (this.get(MapProperty.TARGET));
+    return /** @type {HTMLElement|string|undefined} */ (this.get(
+      MapProperty.TARGET
+    ));
   }
 
   /**
@@ -688,7 +768,9 @@ class PluggableMap extends BaseObject {
   getTargetElement() {
     const target = this.getTarget();
     if (target !== undefined) {
-      return typeof target === 'string' ? document.getElementById(target) : target;
+      return typeof target === "string"
+        ? document.getElementById(target)
+        : target;
     } else {
       return null;
     }
@@ -702,7 +784,10 @@ class PluggableMap extends BaseObject {
    * @api
    */
   getCoordinateFromPixel(pixel) {
-    return toUserCoordinate(this.getCoordinateFromPixelInternal(pixel), this.getView().getProjection());
+    return toUserCoordinate(
+      this.getCoordinateFromPixelInternal(pixel),
+      this.getView().getProjection()
+    );
   }
 
   /**
@@ -716,7 +801,10 @@ class PluggableMap extends BaseObject {
     if (!frameState) {
       return null;
     } else {
-      return applyTransform(frameState.pixelToCoordinateTransform, pixel.slice());
+      return applyTransform(
+        frameState.pixelToCoordinateTransform,
+        pixel.slice()
+      );
     }
   }
 
@@ -808,7 +896,10 @@ class PluggableMap extends BaseObject {
    * @api
    */
   getPixelFromCoordinate(coordinate) {
-    const viewCoordinate = fromUserCoordinate(coordinate, this.getView().getProjection());
+    const viewCoordinate = fromUserCoordinate(
+      coordinate,
+      this.getView().getProjection()
+    );
     return this.getPixelFromCoordinateInternal(viewCoordinate);
   }
 
@@ -823,7 +914,10 @@ class PluggableMap extends BaseObject {
     if (!frameState) {
       return null;
     } else {
-      return applyTransform(frameState.coordinateToPixelTransform, coordinate.slice(0, 2));
+      return applyTransform(
+        frameState.coordinateToPixelTransform,
+        coordinate.slice(0, 2)
+      );
     }
   }
 
@@ -842,7 +936,9 @@ class PluggableMap extends BaseObject {
    * @api
    */
   getSize() {
-    return /** @type {import("./size.js").Size|undefined} */ (this.get(MapProperty.SIZE));
+    return /** @type {import("./size.js").Size|undefined} */ (this.get(
+      MapProperty.SIZE
+    ));
   }
 
   /**
@@ -913,7 +1009,10 @@ class PluggableMap extends BaseObject {
     const center = frameState.viewState.center;
     const deltaX = tileCenter[0] - center[0];
     const deltaY = tileCenter[1] - center[1];
-    return 65536 * Math.log(tileResolution) + Math.sqrt(deltaX * deltaX + deltaY * deltaY) / tileResolution;
+    return (
+      65536 * Math.log(tileResolution) +
+      Math.sqrt(deltaX * deltaX + deltaY * deltaY) / tileResolution
+    );
   }
 
   /**
@@ -935,12 +1034,14 @@ class PluggableMap extends BaseObject {
       // coordinates so interactions cannot be used.
       return;
     }
-    let target = mapBrowserEvent.originalEvent.target;
-    while (target instanceof HTMLElement) {
-      if (target.parentElement === this.overlayContainerStopEvent_) {
-        return;
+    let target = /** @type {Node} */ (mapBrowserEvent.originalEvent.target);
+    if (!mapBrowserEvent.dragging) {
+      while (target && target !== this.viewport_) {
+        if (target.parentElement === this.overlayContainerStopEvent_) {
+          return;
+        }
+        target = target.parentElement;
       }
-      target = target.parentElement;
     }
     mapBrowserEvent.frameState = this.frameState_;
     const interactionsArray = this.getInteractions().getArray();
@@ -980,7 +1081,8 @@ class PluggableMap extends BaseObject {
       if (frameState) {
         const hints = frameState.viewHints;
         if (hints[ViewHint.ANIMATING] || hints[ViewHint.INTERACTING]) {
-          const lowOnFrameBudget = !IMAGE_DECODE && Date.now() - frameState.time > 8;
+          const lowOnFrameBudget =
+            !IMAGE_DECODE && Date.now() - frameState.time > 8;
           maxTotalLoading = lowOnFrameBudget ? 0 : 8;
           maxNewLoads = lowOnFrameBudget ? 0 : 2;
         }
@@ -999,7 +1101,10 @@ class PluggableMap extends BaseObject {
       !this.getLoading()
     ) {
       // @ts-ignore
-      this.renderer_.dispatchRenderEvent(RenderEventType.RENDERCOMPLETE, frameState);
+      this.renderer_.dispatchRenderEvent(
+        RenderEventType.RENDERCOMPLETE,
+        frameState
+      );
     }
 
     const postRenderFunctions = this.postRenderFunctions_;
@@ -1034,12 +1139,6 @@ class PluggableMap extends BaseObject {
       targetElement = this.getTargetElement();
     }
 
-    if (this.focusHandlerKeys_) {
-      for (let i = 0, ii = this.focusHandlerKeys_.length; i < ii; ++i) {
-        unlistenByKey(this.focusHandlerKeys_[i]);
-      }
-      this.focusHandlerKeys_ = null;
-    }
     if (this.keyHandlerKeys_) {
       for (let i = 0, ii = this.keyHandlerKeys_.length; i < ii; ++i) {
         unlistenByKey(this.keyHandlerKeys_[i]);
@@ -1068,20 +1167,23 @@ class PluggableMap extends BaseObject {
       if (!this.renderer_) {
         this.renderer_ = this.createRenderer();
       }
-      let hasFocus = true;
-      if (targetElement.hasAttribute('tabindex')) {
-        hasFocus = document.activeElement === targetElement;
-        this.focusHandlerKeys_ = [
-          listen(targetElement, EventType.FOCUS, setTouchAction.bind(this, this.viewport_, 'none')),
-          listen(targetElement, EventType.BLUR, setTouchAction.bind(this, this.viewport_, 'auto'))
-        ];
-      }
-      setTouchAction(this.viewport_, hasFocus ? 'none' : 'auto');
 
-      const keyboardEventTarget = !this.keyboardEventTarget_ ? targetElement : this.keyboardEventTarget_;
+      const keyboardEventTarget = !this.keyboardEventTarget_
+        ? targetElement
+        : this.keyboardEventTarget_;
       this.keyHandlerKeys_ = [
-        listen(keyboardEventTarget, EventType.KEYDOWN, this.handleBrowserEvent, this),
-        listen(keyboardEventTarget, EventType.KEYPRESS, this.handleBrowserEvent, this)
+        listen(
+          keyboardEventTarget,
+          EventType.KEYDOWN,
+          this.handleBrowserEvent,
+          this
+        ),
+        listen(
+          keyboardEventTarget,
+          EventType.KEYPRESS,
+          this.handleBrowserEvent,
+          this
+        )
       ];
 
       if (!this.handleResize_) {
@@ -1123,9 +1225,20 @@ class PluggableMap extends BaseObject {
     }
     const view = this.getView();
     if (view) {
-      this.viewport_.setAttribute('data-view', getUid(view));
-      this.viewPropertyListenerKey_ = listen(view, ObjectEventType.PROPERTYCHANGE, this.handleViewPropertyChanged_, this);
-      this.viewChangeListenerKey_ = listen(view, EventType.CHANGE, this.handleViewPropertyChanged_, this);
+      this.updateViewportSize_();
+
+      this.viewPropertyListenerKey_ = listen(
+        view,
+        ObjectEventType.PROPERTYCHANGE,
+        this.handleViewPropertyChanged_,
+        this
+      );
+      this.viewChangeListenerKey_ = listen(
+        view,
+        EventType.CHANGE,
+        this.handleViewPropertyChanged_,
+        this
+      );
 
       view.resolveConstraints(0);
     }
@@ -1249,13 +1362,22 @@ class PluggableMap extends BaseObject {
     /** @type {?FrameState} */
     let frameState = null;
     if (size !== undefined && hasArea(size) && view && view.isDef()) {
-      const viewHints = view.getHints(this.frameState_ ? this.frameState_.viewHints : undefined);
+      const viewHints = view.getHints(
+        this.frameState_ ? this.frameState_.viewHints : undefined
+      );
       const viewState = view.getState();
       frameState = {
         animate: false,
         coordinateToPixelTransform: this.coordinateToPixelTransform_,
-        declutterItems: previousFrameState ? previousFrameState.declutterItems : [],
-        extent: getForViewAndSize(viewState.center, viewState.resolution, viewState.rotation, size),
+        declutterItems: previousFrameState
+          ? previousFrameState.declutterItems
+          : [],
+        extent: getForViewAndSize(
+          viewState.center,
+          viewState.resolution,
+          viewState.rotation,
+          size
+        ),
         index: this.frameIndex_++,
         layerIndex: 0,
         layerStatesArray: this.getLayerGroup().getLayerStatesArray(),
@@ -1279,12 +1401,20 @@ class PluggableMap extends BaseObject {
       if (frameState.animate) {
         this.render();
       }
-      Array.prototype.push.apply(this.postRenderFunctions_, frameState.postRenderFunctions);
+      Array.prototype.push.apply(
+        this.postRenderFunctions_,
+        frameState.postRenderFunctions
+      );
 
       if (previousFrameState) {
-        const moveStart = !this.previousExtent_ || (!isEmpty(this.previousExtent_) && !equals(frameState.extent, this.previousExtent_));
+        const moveStart =
+          !this.previousExtent_ ||
+          (!isEmpty(this.previousExtent_) &&
+            !equals(frameState.extent, this.previousExtent_));
         if (moveStart) {
-          this.dispatchEvent(new MapEvent(MapEventType.MOVESTART, this, previousFrameState));
+          this.dispatchEvent(
+            new MapEvent(MapEventType.MOVESTART, this, previousFrameState)
+          );
           this.previousExtent_ = createOrUpdateEmpty(this.previousExtent_);
         }
       }
@@ -1296,14 +1426,19 @@ class PluggableMap extends BaseObject {
         !equals(frameState.extent, this.previousExtent_);
 
       if (idle) {
-        this.dispatchEvent(new MapEvent(MapEventType.MOVEEND, this, frameState));
+        this.dispatchEvent(
+          new MapEvent(MapEventType.MOVEEND, this, frameState)
+        );
         clone(frameState.extent, this.previousExtent_);
       }
     }
 
     this.dispatchEvent(new MapEvent(MapEventType.POSTRENDER, this, frameState));
 
-    this.postRenderTimeoutHandle_ = setTimeout(this.handlePostRender.bind(this), 0);
+    this.postRenderTimeoutHandle_ = setTimeout(
+      this.handlePostRender.bind(this),
+      0
+    );
   }
 
   /**
@@ -1361,16 +1496,37 @@ class PluggableMap extends BaseObject {
       const computedStyle = getComputedStyle(targetElement);
       this.setSize([
         targetElement.offsetWidth -
-          parseFloat(computedStyle['borderLeftWidth']) -
-          parseFloat(computedStyle['paddingLeft']) -
-          parseFloat(computedStyle['paddingRight']) -
-          parseFloat(computedStyle['borderRightWidth']),
+          parseFloat(computedStyle["borderLeftWidth"]) -
+          parseFloat(computedStyle["paddingLeft"]) -
+          parseFloat(computedStyle["paddingRight"]) -
+          parseFloat(computedStyle["borderRightWidth"]),
         targetElement.offsetHeight -
-          parseFloat(computedStyle['borderTopWidth']) -
-          parseFloat(computedStyle['paddingTop']) -
-          parseFloat(computedStyle['paddingBottom']) -
-          parseFloat(computedStyle['borderBottomWidth'])
+          parseFloat(computedStyle["borderTopWidth"]) -
+          parseFloat(computedStyle["paddingTop"]) -
+          parseFloat(computedStyle["paddingBottom"]) -
+          parseFloat(computedStyle["borderBottomWidth"])
       ]);
+    }
+
+    this.updateViewportSize_();
+  }
+
+  /**
+   * Recomputes the viewport size and save it on the view object (if any)
+   * @private
+   */
+  updateViewportSize_() {
+    const view = this.getView();
+    if (view) {
+      let size = undefined;
+      const computedStyle = getComputedStyle(this.viewport_);
+      if (computedStyle.width && computedStyle.height) {
+        size = [
+          parseInt(computedStyle.width, 10),
+          parseInt(computedStyle.height, 10)
+        ];
+      }
+      view.setViewportSize(size);
     }
   }
 }
@@ -1386,7 +1542,9 @@ function createOptionsInternal(options) {
   let keyboardEventTarget = null;
   if (options.keyboardEventTarget !== undefined) {
     keyboardEventTarget =
-      typeof options.keyboardEventTarget === 'string' ? document.getElementById(options.keyboardEventTarget) : options.keyboardEventTarget;
+      typeof options.keyboardEventTarget === "string"
+        ? document.getElementById(options.keyboardEventTarget)
+        : options.keyboardEventTarget;
   }
 
   /**
@@ -1395,21 +1553,26 @@ function createOptionsInternal(options) {
   const values = {};
 
   const layerGroup =
-    options.layers && typeof /** @type {?} */ (options.layers).getLayers === 'function'
+    options.layers &&
+    typeof (/** @type {?} */ (options.layers).getLayers) === "function"
       ? /** @type {LayerGroup} */ (options.layers)
       : new LayerGroup({ layers: /** @type {Collection} */ (options.layers) });
   values[MapProperty.LAYERGROUP] = layerGroup;
 
   values[MapProperty.TARGET] = options.target;
 
-  values[MapProperty.VIEW] = options.view !== undefined ? options.view : new View();
+  values[MapProperty.VIEW] =
+    options.view !== undefined ? options.view : new View();
 
   let controls;
   if (options.controls !== undefined) {
     if (Array.isArray(options.controls)) {
       controls = new Collection(options.controls.slice());
     } else {
-      assert(typeof /** @type {?} */ (options.controls).getArray === 'function', 47); // Expected `controls` to be an array or an `import("./Collection.js").Collection`
+      assert(
+        typeof (/** @type {?} */ (options.controls).getArray) === "function",
+        47
+      ); // Expected `controls` to be an array or an `import("./Collection.js").Collection`
       controls = /** @type {Collection} */ (options.controls);
     }
   }
@@ -1419,7 +1582,11 @@ function createOptionsInternal(options) {
     if (Array.isArray(options.interactions)) {
       interactions = new Collection(options.interactions.slice());
     } else {
-      assert(typeof /** @type {?} */ (options.interactions).getArray === 'function', 48); // Expected `interactions` to be an array or an `import("./Collection.js").Collection`
+      assert(
+        typeof (/** @type {?} */ (options.interactions).getArray) ===
+          "function",
+        48
+      ); // Expected `interactions` to be an array or an `import("./Collection.js").Collection`
       interactions = /** @type {Collection} */ (options.interactions);
     }
   }
@@ -1429,7 +1596,10 @@ function createOptionsInternal(options) {
     if (Array.isArray(options.overlays)) {
       overlays = new Collection(options.overlays.slice());
     } else {
-      assert(typeof /** @type {?} */ (options.overlays).getArray === 'function', 49); // Expected `overlays` to be an array or an `import("./Collection.js").Collection`
+      assert(
+        typeof (/** @type {?} */ (options.overlays).getArray) === "function",
+        49
+      ); // Expected `overlays` to be an array or an `import("./Collection.js").Collection`
       overlays = options.overlays;
     }
   } else {
