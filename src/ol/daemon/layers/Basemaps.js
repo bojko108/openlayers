@@ -1,9 +1,9 @@
-import XYZ from '../../source/XYZ';
-import OSM from '../../source/OSM';
-import BingMaps from '../../source/BingMaps';
-import Stamen from '../../source/Stamen';
-import TileWMS from '../../source/TileWMS';
-import TileArcGISRest from '../../source/TileArcGISRest';
+import XYZ from "../../source/XYZ";
+import OSM from "../../source/OSM";
+import BingMaps from "../../source/BingMaps";
+import Stamen from "../../source/Stamen";
+import TileWMS from "../../source/TileWMS";
+import TileArcGISRest from "../../source/TileArcGISRest";
 
 /**
  * @typedef {Object} BasemapSource
@@ -26,55 +26,56 @@ export const EnumBasemaps = {
   /**
    * Blank map
    */
-  NONE: 'none',
+  NONE: "none",
   /**
    * Local tile layer, you must specify the URL template
    */
-  LOCAL: 'local',
+  LOCAL: "local",
   /**
    * OpenStreetMap {@link http://www.openstreetmap.org}
    */
-  OSM: 'osm',
+  OSM: "osm",
   /**
    * OpenCycleMap {@link http://www.opencyclemap.org}
    */
-  OCM: 'ocm',
+  OCM: "ocm",
   /**
    * Bing maps roads {@link https://www.bing.com/maps/}. You must also specify
    * an access key and map type as string - `Road`, `Aerial`...
    */
-  BINGMAPS: 'bingmaps',
+  BINGMAPS: "bingmaps",
   /**
    * Stamen maps. You must specify the map type as string - `toner`, `terrain` or `watercolor`
    * {@link http://maps.stamen.com/watercolor/#12/43/24}
    */
-  STAMEN: 'stamen',
+  STAMEN: "stamen",
   /**
-   * You must specify the map type: `{LAYERS: 'BGtopoVJ-raster-v3.00'}` - BG topo map from in scale 1:25 000
-   * or `{LAYERS: 'BGtopo-126k'}` for BG topo map from in scale 1:126 000 {@link http://web.uni-plovdiv.bg/vedrin/}
+   * You must specify the map type: `{LAYERS: 'BGtopoVJ-raster-v3.00'}` - BG topo map from in scale 1:25 000,
+   * `{LAYERS: 'ETK-1-5000'}` - BG topo map in scale 1:5 000 or `{LAYERS: 'BGtopo-126k'}` for BG topo map from in scale 1:126 000
+   * {@link http://web.uni-plovdiv.bg/vedrin/}
    */
-  WMS: 'wms',
+  WMS: "wms",
   /**
    * BGMountains map {@link http://bgmountains.org/}
    */
-  BGMOUNTAINS: 'bgmountains',
+  BGMOUNTAINS: "bgmountains",
   /**
    * Tiles in XYZ format
    */
-  XYZ: 'xyz',
+  XYZ: "xyz",
   /**
    * Tiles from ArcGIS Rest MapService
    */
-  ARCGISREST: 'arcgisrest',
+  ARCGISREST: "arcgisrest",
   /**
    * OpenTopoMap {@link http://opentopomap.org/}
    */
-  TOPOGRAPHIC: 'topographic',
+  TOPOGRAPHIC: "topographic",
   /**
    * Mapbox  {@link http://mapbox.com}. You must also specify an access key and map type
    * as string - `mapbox.streets`, `mapbox.satellite`, `mapbox.dark`...
    */
-  MAPBOX: 'mapbox'
+  MAPBOX: "mapbox",
 };
 /**
  * @classdesc
@@ -107,8 +108,8 @@ export default class Basemaps {
   static Local(url) {
     return new XYZ({
       url: url,
-      attributions: 'local data',
-      crossOrigin: 'anonymous'
+      attributions: "local data",
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -117,8 +118,9 @@ export default class Basemaps {
    */
   static get OSM() {
     return new OSM({
-      attributions: '<a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a>',
-      crossOrigin: 'anonymous'
+      attributions:
+        '<a href="https://www.openstreetmap.org" target="_blank">OpenStreetMap</a>',
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -126,11 +128,12 @@ export default class Basemaps {
    * @param {?String} apiKey - access key
    * @return {XYZ}
    */
-  static OCM(apiKey = 'a5ce9ce48b7d48238f1c691c4161f29c') {
+  static OCM(apiKey = "a5ce9ce48b7d48238f1c691c4161f29c") {
     return new XYZ({
       url: `https://a.tile.thunderforest.com/cycle/{z}/{x}/{y}.png?apikey=${apiKey}`,
-      attributions: '<a href="https://www.opencyclemap.org" target="_blank">OpenCycleMap</a>',
-      crossOrigin: 'anonymous'
+      attributions:
+        '<a href="https://www.opencyclemap.org" target="_blank">OpenCycleMap</a>',
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -140,11 +143,15 @@ export default class Basemaps {
    * @param {?String} apiKey - access key
    * @return {BingMaps}
    */
-  static BingMaps(mapType, culture = 'en-us', apiKey = 'AkGbxXx6tDWf1swIhPJyoAVp06H0s0gDTYslNWWHZ6RoPqMpB9ld5FY1WutX8UoF') {
+  static BingMaps(
+    mapType,
+    culture = "en-us",
+    apiKey = "AkGbxXx6tDWf1swIhPJyoAVp06H0s0gDTYslNWWHZ6RoPqMpB9ld5FY1WutX8UoF"
+  ) {
     return new BingMaps({
       key: apiKey,
       culture: culture,
-      imagerySet: mapType
+      imagerySet: mapType,
     });
   }
   /**
@@ -155,22 +162,23 @@ export default class Basemaps {
   static Stamen(mapType) {
     return new Stamen({
       layer: mapType,
-      crossOrigin: 'anonymous'
+      crossOrigin: "anonymous",
     });
   }
   /**
    * Create new source for tile data from a WMS server
    * @param {!String} url
    * @param {import('../../source/TileWMS').Options} params - WMS parameters
-   * use `{LAYERS: 'BGtopoVJ-raster-v3.00'}` - BG topo map from in scale 1:25 000
-   * or `{LAYERS: 'BGtopo-126k'}` for BG topo map from in scale 1:126 000 - {@link http://web.uni-plovdiv.bg/vedrin/}
+   * use `{LAYERS: 'BGtopoVJ-raster-v3.00'}` - BG topo map in scale 1:25 000,
+   * `{LAYERS: 'ETK-1-5000'}` - BG topo map in scale 1:5 000
+   * or `{LAYERS: 'BGtopo-126k'}` for BG topo map in scale 1:126 000 - {@link http://web.uni-plovdiv.bg/vedrin/}
    * @return {TileWMS}
    */
   static WMS(url, params, attribution) {
     return new TileWMS({
       url: url, //'http://www.kade.si/cgi-bin/mapserv?',
       params: params, //{ 'LAYERS': mapType, 'TILED': true, 'format': 'image/png' },
-      attributions: attribution //'<a href="http://cart.uni-plovdiv.net/" target="_blank">CART Lab</a> / <a href="https://plus.google.com/117738982997877636232?rel=author" target="_blank">Vedrin Jeliazkov</a>'
+      attributions: attribution, //'<a href="http://cart.uni-plovdiv.net/" target="_blank">CART Lab</a> / <a href="https://plus.google.com/117738982997877636232?rel=author" target="_blank">Vedrin Jeliazkov</a>'
     });
   }
   /**
@@ -179,10 +187,10 @@ export default class Basemaps {
    */
   static get BGMountains() {
     return new XYZ({
-      url: 'http://bgmtile.kade.si/{z}/{x}/{y}.png',
+      url: "http://bgmtile.kade.si/{z}/{x}/{y}.png",
       attributions:
         '<a href="http://cart.uni-plovdiv.net/" target="_blank">CART Lab</a> / <a href="http://www.bgmountains.org/" target="_blank">BGM team</a>',
-      crossOrigin: 'anonymous'
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -194,7 +202,7 @@ export default class Basemaps {
     return new XYZ({
       url: url,
       attributions: attribution,
-      crossOrigin: 'anonymous'
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -202,7 +210,7 @@ export default class Basemaps {
    * @param {!import('../../source/TileArcGISRest').Options} options
    */
   static ARCGISREST(options) {
-    options.crossOrigin = options.crossOrigin || 'anonymous';
+    options.crossOrigin = options.crossOrigin || "anonymous";
     return new TileArcGISRest(options);
   }
   /**
@@ -212,9 +220,10 @@ export default class Basemaps {
    */
   static get Topographic() {
     return new XYZ({
-      url: 'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
-      attributions: '<a href="https://opentopomap.org/" target="_blank">OpenTopoMap</a>',
-      crossOrigin: 'anonymous'
+      url: "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
+      attributions:
+        '<a href="https://opentopomap.org/" target="_blank">OpenTopoMap</a>',
+      crossOrigin: "anonymous",
     });
   }
   /**
@@ -224,11 +233,15 @@ export default class Basemaps {
    * @param {?String} apiKey - access key
    * @return {XYZ}
    */
-  static MapBox(mapType, apiKey = 'pk.eyJ1IjoiYm9qa28xMDgiLCJhIjoiY2l2ajc5NXpmMDA1NzJ0cHAzNjllZW9rcSJ9.3zzjbfbOdfhaXqLHZYkcNQ') {
+  static MapBox(
+    mapType,
+    apiKey = "pk.eyJ1IjoiYm9qa28xMDgiLCJhIjoiY2l2ajc5NXpmMDA1NzJ0cHAzNjllZW9rcSJ9.3zzjbfbOdfhaXqLHZYkcNQ"
+  ) {
     return new XYZ({
       url: `https://api.tiles.mapbox.com/v4/${mapType}/{z}/{x}/{y}.png?access_token=${apiKey}`,
-      attributions: '<a href="https://www.mapbox.com" target="_blank">MapBox</a>',
-      crossOrigin: 'anonymous'
+      attributions:
+        '<a href="https://www.mapbox.com" target="_blank">MapBox</a>',
+      crossOrigin: "anonymous",
     });
   }
 }

@@ -45,8 +45,9 @@ export default class DaemonVectorLayer extends VectorLayer {
   }
 
   /**
-   * Creates a new Source - loads features from ArcGIS Server with BBOX strategy.
+   * Creates a new Source
    * @private
+   * @return {VectorSource}
    */
   _createSource() {
     return new VectorSource({

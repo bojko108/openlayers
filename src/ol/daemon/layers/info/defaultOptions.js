@@ -25,15 +25,16 @@
  * @property {Boolean} [displayPopupsOnClick=false]
  * @property {Number} [minScale=1]
  * @property {Number} [maxScale=100000000]
+ * @property {String} [strategy='all']
  * @property {Array<import('../../styles/defaultStyle').StyleType>} [styles]
  * @property {Array<import('../../styles/defaultStyle').LabelType>} [labels]
  */
 
 export default {
-  type: 'vector',
-  title: 'Layer',
-  objectIdField: 'fid',
-  gdbVersion: '',
+  type: "vector",
+  title: "Layer",
+  objectIdField: "fid",
+  gdbVersion: "",
   fields: [],
   relationships: [],
   editable: false,
@@ -48,6 +49,7 @@ export default {
   displayPopupsOnClick: false,
   minScale: 1,
   maxScale: 100000000,
+  strategy: "all",
   styles: [],
   labels: []
 };

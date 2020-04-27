@@ -6,21 +6,29 @@ export const EnumWidgets = {
   /**
    * Editor widget
    */
-  EDITOR: 'editor',
+  EDITOR: "editor",
   /**
    * Select widget
    */
-  SELECT: 'select',
+  SELECT: "select",
   /**
    * Measure widget
    */
-  MEASURE: 'measure',
+  MEASURE: "measure",
   /**
    * Highight widget
    */
-  BOOKMARKS: 'bookmarks',
+  BOOKMARKS: "bookmarks",
   /**
    * Highight widget
    */
-  HIGHLIGHT: 'highlight'
+  HIGHLIGHT: "highlight",
+  /**
+   * User location widget
+   */
+  USER_LOCATION: "userLocation",
+  /**
+   * Info window widget
+   */
+  INFO: "info"
 };

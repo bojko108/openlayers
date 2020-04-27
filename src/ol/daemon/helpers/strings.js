@@ -11,15 +11,15 @@ export const format = function() {
   let mask = arguments[0];
   // start with the second argument (i = 1)
   for (let i = 1; i < arguments.length; i++) {
-    const regEx = new RegExp('\\{' + (i - 1) + '\\}', 'gm');
+    const regEx = new RegExp("\\{" + (i - 1) + "\\}", "gm");
     mask = mask.replace(regEx, arguments[i]);
   }
 
-  const regex = new RegExp('{([0-9]*?)}');
+  const regex = new RegExp("{([0-9]*?)}");
   let match = null;
   //remove any '{someText}' strings left within the returned string
   while ((match = regex.exec(mask)) !== null) {
-    mask = mask.replace(regex, '');
+    mask = mask.replace(regex, "");
   }
 
   return mask;
@@ -46,16 +46,16 @@ export const format = function() {
 export const formatObject = function(mask, object, removeLeftovers = true) {
   let result = mask;
   for (let name in object) {
-    const regEx = new RegExp('\\{' + name + '\\}', 'gm');
+    const regEx = new RegExp("\\{" + name + "\\}", "gm");
     result = result.replace(regEx, object[name]);
   }
 
   if (removeLeftovers) {
-    const regex = new RegExp('{([a-zA-Z]*?)}');
+    const regex = new RegExp("{([a-zA-Z]*?)}");
     let match = null;
     //remove any '{someText}' strings left within the returned string
     while ((match = regex.exec(result)) !== null) {
-      result = result.replace(regex, '');
+      result = result.replace(regex, "");
     }
   }
 
@@ -71,24 +71,27 @@ export const formatObject = function(mask, object, removeLeftovers = true) {
  * @param {Boolean} [removeLeftovers=true] - remove unplaced fields from the result
  * @example
  * // Following example will write to the console: 'SF_1234 - Name of station'
- * const layerInfo = map.getLayer('trafostations').layerInfo
  * const mask = '{SJZ_STAN} - {NAZEV_BLISCI}'
  *
- * formatWithLayerInfo(mask, feature.getAttributes())
+ * formatAttributes(mask, feature.getAttributes())
  * @return {String}
  */
-export const formatAttributes = function(mask, attributes, removeLeftovers = true) {
+export const formatAttributes = function(
+  mask,
+  attributes,
+  removeLeftovers = true
+) {
   attributes.forEach(attribute => {
-    const regEx = new RegExp('\\{' + attribute.name + '\\}', 'gm');
+    const regEx = new RegExp("\\{" + attribute.name + "\\}", "gm");
     mask = mask.replace(regEx, attribute.value);
   });
 
   if (removeLeftovers) {
     //remove any '{SOME_TEXT}' strings left within the returned string
-    const regex = new RegExp('{([a-zA-Z]*?)}');
+    const regex = new RegExp("{([a-zA-Z]*?)}");
     let match;
     while ((match = regex.exec(mask)) !== null) {
-      mask = mask.replace(regex, '');
+      mask = mask.replace(regex, "");
     }
   }
 

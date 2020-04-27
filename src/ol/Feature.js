@@ -1,15 +1,15 @@
 /**
  * @module ol/Feature
  */
-import { assert } from './asserts.js';
-import { listen, unlistenByKey } from './events.js';
-import EventType from './events/EventType.js';
-import BaseObject, { getChangeEventType } from './Object.js';
-import { getVectorContext } from './render.js';
-import { easeOut } from './easing.js';
+import { assert } from "./asserts.js";
+import { listen, unlistenByKey } from "./events.js";
+import EventType from "./events/EventType.js";
+import BaseObject, { getChangeEventType } from "./Object.js";
+import { getVectorContext } from "./render.js";
+import { easeOut } from "./easing.js";
 
-import { createFeatureStyle, calculateCenterPointOfExtent } from './daemon';
-import flashingOptions from './daemon/helpers/flashingOptions.js';
+import { createFeatureStyle, calculateCenterPointOfExtent } from "./daemon";
+import flashingOptions from "./daemon/helpers/flashingOptions.js";
 
 /**
  * Indicates feature states - used when styling the feature before drawing it on the map. If `hidden = true`
@@ -125,7 +125,7 @@ class Feature extends BaseObject {
      * @type {string}
      * @private
      */
-    this.geometryName_ = 'geometry';
+    this.geometryName_ = "geometry";
 
     /**
      * User provided style.
@@ -146,10 +146,17 @@ class Feature extends BaseObject {
      */
     this.geometryChangeKey_ = null;
 
-    this.addEventListener(getChangeEventType(this.geometryName_), this.handleGeometryChanged_);
+    this.addEventListener(
+      getChangeEventType(this.geometryName_),
+      this.handleGeometryChanged_
+    );
 
     if (opt_geometryOrProperties) {
-      if (typeof /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry === 'function') {
+      if (
+        typeof (
+          /** @type {?} */ (opt_geometryOrProperties.getSimplifiedGeometry)
+        ) === "function"
+      ) {
         const geometry = /** @type {Geometry} */ (opt_geometryOrProperties);
         this.setGeometry(geometry);
       } else {
@@ -311,7 +318,12 @@ class Feature extends BaseObject {
     }
     const geometry = this.getGeometry();
     if (geometry) {
-      this.geometryChangeKey_ = listen(geometry, EventType.CHANGE, this.handleGeometryChange_, this);
+      this.geometryChangeKey_ = listen(
+        geometry,
+        EventType.CHANGE,
+        this.handleGeometryChange_,
+        this
+      );
     }
     this.changed();
   }
@@ -363,9 +375,15 @@ class Feature extends BaseObject {
    * @api
    */
   setGeometryName(name) {
-    this.removeEventListener(getChangeEventType(this.geometryName_), this.handleGeometryChanged_);
+    this.removeEventListener(
+      getChangeEventType(this.geometryName_),
+      this.handleGeometryChanged_
+    );
     this.geometryName_ = name;
-    this.addEventListener(getChangeEventType(this.geometryName_), this.handleGeometryChanged_);
+    this.addEventListener(
+      getChangeEventType(this.geometryName_),
+      this.handleGeometryChanged_
+    );
     this.handleGeometryChanged_();
   }
 
@@ -390,14 +408,22 @@ class Feature extends BaseObject {
         editable: field.editable,
         type: field.type,
         hasDomain: field.hasDomain,
-        domain: doNotReturnDomain ? undefined : field.hasDomain ? field.domain : undefined,
-        value: returnDomainCodes ? props[field.name] : field.hasDomain ? field.domain.getValue(props[field.name]) : props[field.name],
+        domain: doNotReturnDomain
+          ? undefined
+          : field.hasDomain
+          ? field.domain
+          : undefined,
+        value: returnDomainCodes
+          ? props[field.name]
+          : field.hasDomain
+          ? field.domain.getValue(props[field.name])
+          : props[field.name],
         // probably code shouldn't be returned at all
         code: field.hasDomain ? props[field.name] : undefined
       }));
     } else {
       for (let name in props) {
-        if (name === 'geometry') continue;
+        if (name === "geometry") continue;
         result.push({
           name,
           alias: name,
@@ -443,13 +469,13 @@ class Feature extends BaseObject {
       start = new Date().getTime(),
       flashedFeature = this.clone(),
       startFlashing = () => {
-        layer.on('postrender', animate);
+        layer.on("postrender", animate);
         layer.addFeature(flashedFeature);
         this.layer.map.render();
       },
       stopFlashing = () => {
         layer.removeFeature(flashedFeature);
-        layer.un('postrender', animate);
+        layer.un("postrender", animate);
       },
       animate = event => {
         const vectorContext = getVectorContext(event),
@@ -457,7 +483,8 @@ class Feature extends BaseObject {
           flashGeom = flashedFeature.getGeometry().clone(),
           elapsed = frameState.time - start,
           elapsedRatio = elapsed / options.duration,
-          newRadius = easeOut(elapsedRatio) * options.radius + options.radius / 2,
+          newRadius =
+            easeOut(elapsedRatio) * options.radius + options.radius / 2,
           opacity = easeOut(1 - elapsedRatio),
           color = `rgba(${options.red},${options.green},${options.blue},${opacity})`,
           style = createFeatureStyle({
@@ -475,7 +502,7 @@ class Feature extends BaseObject {
             }
           });
 
-        if (elapsed > options.duration) {
+        if (elapsed > options.duration || !this.layer) {
           stopFlashing();
           return;
         } else {
@@ -516,7 +543,7 @@ class Feature extends BaseObject {
  * @return {import("./style/Style.js").StyleFunction} A style function.
  */
 export function createStyleFunction(obj) {
-  if (typeof obj === 'function') {
+  if (typeof obj === "function") {
     return obj;
   } else {
     /**
@@ -526,7 +553,7 @@ export function createStyleFunction(obj) {
     if (Array.isArray(obj)) {
       styles = obj;
     } else {
-      assert(typeof /** @type {?} */ (obj).getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+      assert(typeof (/** @type {?} */ (obj.getZIndex)) === "function", 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
       const style = /** @type {import("./style/Style.js").default} */ (obj);
       styles = [style];
     }

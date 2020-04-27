@@ -1,13 +1,15 @@
-import Widget from './Widget';
-import { EnumWidgets } from './types';
+import Widget from "./Widget";
+import { EnumWidgets } from "./types";
 
-import SelectWidget from './Select';
-import BookmarksWidget from './Bookmarks';
-import HighlightWidget from './Highlight';
-import EditorWidget from './Editor';
-import MeasureWidget from './Measure';
+import SelectWidget from "./Select";
+import BookmarksWidget from "./Bookmarks";
+import HighlightWidget from "./Highlight";
+import EditorWidget from "./Editor";
+import MeasureWidget from "./Measure";
+import UserLocationWidget from "./UserLocation";
+import InfoWidget from "./InfoWidget";
 
-export { Widget, SelectWidget, HighlightWidget };
+export { Widget, SelectWidget, HighlightWidget, UserLocationWidget };
 
 let widgets = {};
 
@@ -63,5 +65,11 @@ const widgetsFactory = widgetConfig => {
       return new BookmarksWidget(widgetConfig);
     case EnumWidgets.HIGHLIGHT:
       return new HighlightWidget(widgetConfig);
+    case EnumWidgets.USER_LOCATION:
+      // @ts-ignore
+      return new UserLocationWidget(widgetConfig);
+    case EnumWidgets.INFO:
+      // @ts-ignore
+      return new InfoWidget(widgetConfig);
   }
 };

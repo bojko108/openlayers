@@ -1,14 +1,15 @@
-import Basemaps, { EnumBasemaps } from './Basemaps';
-import TileSource from '../../source/Tile';
-import TileLayer from '../../layer/Tile';
-import VectorLayer from '../../layer/Vector';
-import { EnumLayerType } from './info/LayerInfo';
-import LayerGroup from '../../layer/Group';
-import ArcGISDynamicMapServiceLayer from '../../layer/ArcGISDynamicMapServiceLayer';
-import VectorSource from '../../source/Vector';
-import DaemonVectorLayer from '../../layer/DaemonVectorLayer';
+import Basemaps, { EnumBasemaps } from "./Basemaps";
+import TileSource from "../../source/Tile";
+import TileLayer from "../../layer/Tile";
+import VectorLayer from "../../layer/Vector";
+import { EnumLayerType } from "./info/LayerInfo";
+import LayerGroup from "../../layer/Group";
+import ArcGISDynamicMapServiceLayer from "../../layer/ArcGISDynamicMapServiceLayer";
+import VectorSource from "../../source/Vector";
+import DaemonVectorLayer from "../../layer/DaemonVectorLayer";
+import UgisVectorLayer from "../../layer/UgisVectorLayer";
 
-export { addDomain, getDomain, hasDomain, Domain, Field } from './fields';
+export { addDomain, getDomain, hasDomain, Domain, Field } from "./fields";
 
 /**
  *
@@ -20,7 +21,11 @@ export const createBasemapSource = options => {
     case EnumBasemaps.BGMOUNTAINS:
       return Basemaps.BGMountains;
     case EnumBasemaps.BINGMAPS:
-      return Basemaps.BingMaps(options.mapType, options.culture, options.apiKey);
+      return Basemaps.BingMaps(
+        options.mapType,
+        options.culture,
+        options.apiKey
+      );
     case EnumBasemaps.LOCAL:
       return Basemaps.Local(options.url);
     case EnumBasemaps.MAPBOX:
@@ -60,18 +65,22 @@ export const createBasemapLayer = options => {
  * Creates a new operational layer - vector layer
  *
  * @param {import('../../layer/BaseVector').Options|Object} options
- * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer}
+ * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer|UgisVectorLayer}
  */
 export const createOperationalLayer = options => {
   if (options.metadata) {
     switch (options.metadata.type) {
       case EnumLayerType.GROUP:
-        options.layers = options.layers.map(layer => createOperationalLayer(layer));
+        options.layers = options.layers.map(layer =>
+          createOperationalLayer(layer)
+        );
         return new LayerGroup(options);
       case EnumLayerType.ARCGIS:
         return new ArcGISDynamicMapServiceLayer(options);
       case EnumLayerType.DAEMON:
         return new DaemonVectorLayer(options);
+      case EnumLayerType.UGIS:
+        return new UgisVectorLayer(options);
       default:
         options.source = new VectorSource(options.source);
         return new VectorLayer(options);
