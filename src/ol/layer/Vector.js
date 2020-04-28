@@ -1,16 +1,25 @@
 /**
  * @module ol/layer/Vector
  */
-import BaseVectorLayer from './BaseVector.js';
-import CanvasVectorLayerRenderer from '../renderer/canvas/VectorLayer.js';
-import { METERS_PER_UNIT } from '../proj.js';
-import LayerProperty from './Property';
-import { Style, Icon, Circle } from '../style.js';
+import BaseVectorLayer from "./BaseVector.js";
+import CanvasVectorLayerRenderer from "../renderer/canvas/VectorLayer.js";
+import { METERS_PER_UNIT } from "../proj.js";
+import LayerProperty from "./Property";
+import { Style, Icon, Circle } from "../style.js";
 
-import { testFeature } from '../daemon/filters';
-import { getMapProjection } from '../daemon/map';
-import { createFeatureStyle, createLabelStyle, getFormattedLabel } from '../daemon/styles';
-import { defaultLabelStyle, defaultFeatureStyle, getDefaultSelectStyle, getDefaultHighlightStyle } from '../daemon/styles/defaultStyle.js';
+import { testFeature } from "../daemon/filters";
+import { getMapProjection } from "../daemon/map";
+import {
+  createFeatureStyle,
+  createLabelStyle,
+  getFormattedLabel,
+} from "../daemon/styles";
+import {
+  defaultLabelStyle,
+  defaultFeatureStyle,
+  getDefaultSelectStyle,
+  getDefaultHighlightStyle,
+} from "../daemon/styles/defaultStyle.js";
 
 /**
  * @classdesc
@@ -40,7 +49,6 @@ class VectorLayer extends BaseVectorLayer {
   /**
    * Create a renderer for this layer.
    * @return {import("../renderer/Layer.js").default} A layer renderer.
-   * @protected
    */
   createRenderer() {
     return new CanvasVectorLayerRenderer(this);
@@ -65,8 +73,10 @@ class VectorLayer extends BaseVectorLayer {
    */
   setLabels(labels) {
     this.set(LayerProperty.LABELS, this.__createLabels(labels));
-    // @ts-ignore
-    this.setStyle((feature, resolution) => this.__styleFunction(feature, resolution));
+    this.setStyle((feature, resolution) =>
+      // @ts-ignore
+      this.__styleFunction(feature, resolution)
+    );
   }
 
   /**
@@ -75,8 +85,10 @@ class VectorLayer extends BaseVectorLayer {
    */
   setStyles(styles) {
     this.set(LayerProperty.STYLES, this.__createStyles(styles));
-    // @ts-ignore
-    this.setStyle((feature, resolution) => this.__styleFunction(feature, resolution));
+    this.setStyle((feature, resolution) =>
+      // @ts-ignore
+      this.__styleFunction(feature, resolution)
+    );
   }
 
   /**
@@ -120,7 +132,7 @@ class VectorLayer extends BaseVectorLayer {
    * @param {!Array.<import('../Feature').default>} features - list of features
    */
   removeFeatures(features) {
-    features.forEach(feature => {
+    features.forEach((feature) => {
       this.removeFeature(feature);
     });
   }
@@ -145,7 +157,7 @@ class VectorLayer extends BaseVectorLayer {
    * @return {Array<import('../Feature').default>}
    */
   find(filters) {
-    return this.getLoadedFeatures().filter(feature => {
+    return this.getLoadedFeatures().filter((feature) => {
       return testFeature(feature, filters);
     });
   }
@@ -165,14 +177,14 @@ class VectorLayer extends BaseVectorLayer {
    * @return {Array<import('../daemon/styles/defaultStyle').LabelStyle>}
    */
   __createLabels(labels) {
-    return labels.map(currentLabel => {
+    return labels.map((currentLabel) => {
       const { maxScale, minScale } = currentLabel;
       const style = new Style({ text: createLabelStyle(currentLabel) });
       return {
         maxResolution: this.__getMapResolutionFromScale(maxScale || 1000),
         minResolution: this.__getMapResolutionFromScale(minScale || 1),
         label: currentLabel.text,
-        style
+        style,
       };
     });
   }
@@ -182,10 +194,10 @@ class VectorLayer extends BaseVectorLayer {
    * @return {Array<import('../daemon/styles/defaultStyle').FeatureStyle>}
    */
   __createStyles(styles) {
-    return styles.map(style => {
+    return styles.map((style) => {
       return {
         filters: style.filters || [],
-        style: createFeatureStyle(style)
+        style: createFeatureStyle(style),
       };
     });
   }
@@ -209,15 +221,21 @@ class VectorLayer extends BaseVectorLayer {
 
     // add an additional style if the feature is selected or highlighted
     if (feature.state.selected || feature.state.highlighted) {
-      const additionalStyle = feature.state.highlighted ? getDefaultHighlightStyle() : getDefaultSelectStyle();
+      const additionalStyle = feature.state.highlighted
+        ? getDefaultHighlightStyle()
+        : getDefaultSelectStyle();
 
       if (featureStyle.style.getStroke()) {
-        additionalStyle.getStroke().setWidth(featureStyle.style.getStroke().getWidth() * 3);
+        additionalStyle
+          .getStroke()
+          .setWidth(featureStyle.style.getStroke().getWidth() * 3);
       }
 
       if (featureStyle.style.getImage() instanceof Circle) {
-        // @ts-ignore
-        additionalStyle.getImage().setRadius(featureStyle.style.getImage().getRadius() * 2);
+        additionalStyle
+          .getImage()
+          // @ts-ignore
+          .setRadius(featureStyle.style.getImage().getRadius() * 2);
       }
       if (featureStyle.style.getImage() instanceof Icon) {
         const iconSize = featureStyle.style.getImage().getSize();
@@ -249,8 +267,10 @@ class VectorLayer extends BaseVectorLayer {
   }
 
   __getLabelForResolution(resolution) {
-    return this.labels.find(label => {
-      return label.maxResolution >= resolution && resolution >= label.minResolution;
+    return this.labels.find((label) => {
+      return (
+        label.maxResolution >= resolution && resolution >= label.minResolution
+      );
     });
   }
 
@@ -260,7 +280,7 @@ class VectorLayer extends BaseVectorLayer {
    * @return {import('../daemon/styles/defaultStyle').FeatureStyle}
    */
   __getStyleForFeature(feature) {
-    return this.styles.find(style => {
+    return this.styles.find((style) => {
       if (style.filters) {
         return testFeature(feature, style.filters);
       } else {

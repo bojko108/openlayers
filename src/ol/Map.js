@@ -13,7 +13,7 @@ import {
   get as getProjection,
   transform,
   transformExtent,
-  Projection
+  Projection,
 } from "./proj.js";
 import View from "./View.js";
 import { easeOut } from "./easing.js";
@@ -27,7 +27,7 @@ import { createOperationalLayer } from "./daemon/layers";
 import { createFeatureStyle } from "./daemon/styles";
 import {
   calculateFeaturesExtent,
-  calculateCenterPointOfExtent
+  calculateCenterPointOfExtent,
 } from "./daemon/helpers/math.js";
 import { splitAtIndex } from "./daemon/helpers/strings.js";
 
@@ -101,7 +101,7 @@ class Map extends PluggableMap {
      */
     // @ts-ignore
     this._defaultLayer = createOperationalLayer({
-      metadata: { name: "defaultLayer" }
+      metadata: { name: "defaultLayer" },
     });
     // @ts-ignore
     this._defaultLayer.setMap(this);
@@ -216,9 +216,7 @@ class Map extends PluggableMap {
    * @see http://openlayers.org/en/latest/apidoc/ol.proj.Projection.html
    */
   get projection() {
-    return this.getView()
-      .getProjection()
-      .getCode();
+    return this.getView().getProjection().getCode();
   }
   /**
    * get current map projection
@@ -241,7 +239,7 @@ class Map extends PluggableMap {
     let oldView = this.getView();
 
     // @ts-ignore
-    this.layers.forEach(layer => layer.__mapProjectionChanged());
+    this.layers.forEach((layer) => layer.__mapProjectionChanged());
 
     this.setView(
       new View({
@@ -254,7 +252,7 @@ class Map extends PluggableMap {
         zoom: oldView.getZoom(),
         rotation: oldView.getRotation(),
         minResolution: oldView.getMinResolution(),
-        maxResolution: oldView.getMaxResolution()
+        maxResolution: oldView.getMaxResolution(),
       })
     );
   }
@@ -309,7 +307,7 @@ class Map extends PluggableMap {
    * @param {!String} versionName - The name of the version to display.
    */
   setGDBVersion(versionName) {
-    this.layers.forEach(layer => {
+    this.layers.forEach((layer) => {
       if (layer instanceof ArcGISDynamicMapServiceLayer) {
         layer.setGDBVersion(versionName);
       }
@@ -321,12 +319,9 @@ class Map extends PluggableMap {
    * @return {Array<import('./layer/Tile').default|import('./layer/Base').default>}
    */
   getBasemapLayers() {
-    let layers = this.getLayers()
-      .getArray()
-      .slice()
-      .reverse();
+    let layers = this.getLayers().getArray().slice().reverse();
 
-    return layers.filter(layer => {
+    return layers.filter((layer) => {
       return layer.layerInfo.type === "basemap";
     });
   }
@@ -335,12 +330,9 @@ class Map extends PluggableMap {
    * @return {Array<import('./layer/Vector').default|import('./layer/Base').default>}
    */
   getVectorLayers() {
-    let layers = this.getLayers()
-      .getArray()
-      .slice()
-      .reverse();
+    let layers = this.getLayers().getArray().slice().reverse();
 
-    return layers.filter(layer => {
+    return layers.filter((layer) => {
       return layer.layerInfo.type === "vector";
     });
   }
@@ -605,7 +597,7 @@ class Map extends PluggableMap {
   flash(features, options) {
     options = Object.assign({}, flashingOptions, options);
     const start = new Date().getTime(),
-      flashedFeatures = features.map(f => f.clone()),
+      flashedFeatures = features.map((f) => f.clone()),
       startFlashing = () => {
         this.defaultLayer.on("postrender", animate);
         //@ts-ignore
@@ -617,7 +609,7 @@ class Map extends PluggableMap {
         this.defaultLayer.removeFeatures(flashedFeatures);
         this.defaultLayer.un("postrender", animate);
       },
-      animate = event => {
+      animate = (event) => {
         const vectorContext = getVectorContext(event),
           frameState = event.frameState,
           elapsed = frameState.time - start,
@@ -629,16 +621,16 @@ class Map extends PluggableMap {
           style = createFeatureStyle({
             stroke: {
               color,
-              width: easeOut(elapsedRatio) * (options.radius * 2)
+              width: easeOut(elapsedRatio) * (options.radius * 2),
             },
             fill: { color },
             circle: {
               radius: newRadius,
               stroke: {
                 color,
-                width: easeOut(elapsedRatio) * (options.radius * 2)
-              }
-            }
+                width: easeOut(elapsedRatio) * (options.radius * 2),
+              },
+            },
           });
 
         if (elapsed > options.duration) {
@@ -677,7 +669,7 @@ class Map extends PluggableMap {
         this.defaultLayer.removeFeature(flashedFeature);
         this.defaultLayer.un("postrender", animate);
       },
-      animate = event => {
+      animate = (event) => {
         const vectorContext = getVectorContext(event),
           frameState = event.frameState,
           elapsed = frameState.time - start,
@@ -689,16 +681,16 @@ class Map extends PluggableMap {
           style = createFeatureStyle({
             stroke: {
               color,
-              width: easeOut(elapsedRatio) * (options.radius * 2)
+              width: easeOut(elapsedRatio) * (options.radius * 2),
             },
             fill: { color },
             circle: {
               radius: newRadius,
               stroke: {
                 color,
-                width: easeOut(elapsedRatio) * (options.radius * 2)
-              }
-            }
+                width: easeOut(elapsedRatio) * (options.radius * 2),
+              },
+            },
           });
         if (elapsed > options.duration) {
           stopFlashing();

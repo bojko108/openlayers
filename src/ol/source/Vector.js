@@ -2,24 +2,24 @@
  * @module ol/source/Vector
  */
 
-import { getUid } from '../util.js';
-import Collection from '../Collection.js';
-import CollectionEventType from '../CollectionEventType.js';
-import ObjectEventType from '../ObjectEventType.js';
-import { extend } from '../array.js';
-import { assert } from '../asserts.js';
-import { listen, unlistenByKey } from '../events.js';
-import Event from '../events/Event.js';
-import EventType from '../events/EventType.js';
-import { containsExtent, equals } from '../extent.js';
-import { xhr } from '../featureloader.js';
-import { TRUE, VOID } from '../functions.js';
-import { all as allStrategy } from '../loadingstrategy.js';
-import { isEmpty, getValues } from '../obj.js';
-import Source from './Source.js';
-import SourceState from './State.js';
-import VectorEventType from './VectorEventType.js';
-import RBush from '../structs/RBush.js';
+import Collection from "../Collection.js";
+import CollectionEventType from "../CollectionEventType.js";
+import ObjectEventType from "../ObjectEventType.js";
+import Event from "../events/Event.js";
+import EventType from "../events/EventType.js";
+import RBush from "../structs/RBush.js";
+import Source from "./Source.js";
+import SourceState from "./State.js";
+import VectorEventType from "./VectorEventType.js";
+import { TRUE, VOID } from "../functions.js";
+import { all as allStrategy } from "../loadingstrategy.js";
+import { assert } from "../asserts.js";
+import { containsExtent, equals } from "../extent.js";
+import { extend } from "../array.js";
+import { getUid } from "../util.js";
+import { getValues, isEmpty } from "../obj.js";
+import { listen, unlistenByKey } from "../events.js";
+import { xhr } from "../featureloader.js";
 
 /**
  * A function that takes an {@link module:ol/extent~Extent} and a resolution as arguments, and
@@ -164,7 +164,7 @@ class VectorSource extends Source {
       projection: undefined,
       // @ts-ignore
       state: SourceState.READY,
-      wrapX: options.wrapX !== undefined ? options.wrapX : true
+      wrapX: options.wrapX !== undefined ? options.wrapX : true,
     });
 
     /**
@@ -183,7 +183,7 @@ class VectorSource extends Source {
      * @private
      * @type {boolean}
      */
-    this.overlaps_ = options.overlaps == undefined ? true : options.overlaps;
+    this.overlaps_ = options.overlaps === undefined ? true : options.overlaps;
 
     /**
      * @private
@@ -196,16 +196,21 @@ class VectorSource extends Source {
     } else if (this.url_ !== undefined) {
       assert(this.format_, 7); // `format` must be set when `url` is set
       // create a XHR feature loader for "url" and "format"
-      this.loader_ = xhr(this.url_, /** @type {import("../format/Feature.js").default} */ (this.format_));
+      this.loader_ = xhr(
+        this.url_,
+        /** @type {import("../format/Feature.js").default} */ (this.format_)
+      );
     }
 
     /**
      * @private
      * @type {LoadingStrategy}
      */
-    this.strategy_ = options.strategy !== undefined ? options.strategy : allStrategy;
+    this.strategy_ =
+      options.strategy !== undefined ? options.strategy : allStrategy;
 
-    const useSpatialIndex = options.useSpatialIndex !== undefined ? options.useSpatialIndex : true;
+    const useSpatialIndex =
+      options.useSpatialIndex !== undefined ? options.useSpatialIndex : true;
 
     /**
      * @private
@@ -316,7 +321,9 @@ class VectorSource extends Source {
       this.nullGeometryFeatures_[featureKey] = feature;
     }
 
-    this.dispatchEvent(new VectorSourceEvent(VectorEventType.ADDFEATURE, feature));
+    this.dispatchEvent(
+      new VectorSourceEvent(VectorEventType.ADDFEATURE, feature)
+    );
   }
 
   /**
@@ -327,7 +334,12 @@ class VectorSource extends Source {
   setupChangeEvents_(featureKey, feature) {
     this.featureChangeKeys_[featureKey] = [
       listen(feature, EventType.CHANGE, this.handleFeatureChange_, this),
-      listen(feature, ObjectEventType.PROPERTYCHANGE, this.handleFeatureChange_, this)
+      listen(
+        feature,
+        ObjectEventType.PROPERTYCHANGE,
+        this.handleFeatureChange_,
+        this
+      ),
     ];
   }
 
@@ -404,7 +416,9 @@ class VectorSource extends Source {
     }
 
     for (let i = 0, length = newFeatures.length; i < length; i++) {
-      this.dispatchEvent(new VectorSourceEvent(VectorEventType.ADDFEATURE, newFeatures[i]));
+      this.dispatchEvent(
+        new VectorSourceEvent(VectorEventType.ADDFEATURE, newFeatures[i])
+      );
     }
   }
 
@@ -419,7 +433,7 @@ class VectorSource extends Source {
       /**
        * @param {VectorSourceEvent<Geometry>} evt The vector source event
        */
-      function(evt) {
+      function (evt) {
         if (!modifyingCollection) {
           modifyingCollection = true;
           collection.push(evt.feature);
@@ -432,7 +446,7 @@ class VectorSource extends Source {
       /**
        * @param {VectorSourceEvent<Geometry>} evt The vector source event
        */
-      function(evt) {
+      function (evt) {
         if (!modifyingCollection) {
           modifyingCollection = true;
           collection.remove(evt.feature);
@@ -445,10 +459,12 @@ class VectorSource extends Source {
       /**
        * @param {import("../Collection.js").CollectionEvent} evt The collection event
        */
-      function(evt) {
+      function (evt) {
         if (!modifyingCollection) {
           modifyingCollection = true;
-          this.addFeature(/** @type {import("../Feature.js").default<Geometry>} */ (evt.element));
+          this.addFeature(
+            /** @type {import("../Feature.js").default<Geometry>} */ (evt.element)
+          );
           modifyingCollection = false;
         }
       }.bind(this)
@@ -458,10 +474,12 @@ class VectorSource extends Source {
       /**
        * @param {import("../Collection.js").CollectionEvent} evt The collection event
        */
-      function(evt) {
+      function (evt) {
         if (!modifyingCollection) {
           modifyingCollection = true;
-          this.removeFeature(/** @type {import("../Feature.js").default<Geometry>} */ (evt.element));
+          this.removeFeature(
+            /** @type {import("../Feature.js").default<Geometry>} */ (evt.element)
+          );
           modifyingCollection = false;
         }
       }.bind(this)
@@ -541,7 +559,7 @@ class VectorSource extends Source {
    */
   forEachFeatureAtCoordinateDirect(coordinate, callback) {
     const extent = [coordinate[0], coordinate[1], coordinate[0], coordinate[1]];
-    return this.forEachFeatureInExtent(extent, function(feature) {
+    return this.forEachFeatureInExtent(extent, function (feature) {
       const geometry = feature.getGeometry();
       if (geometry.intersectsCoordinate(coordinate)) {
         return callback(feature);
@@ -600,7 +618,7 @@ class VectorSource extends Source {
        * @param {import("../Feature.js").default<Geometry>} feature Feature.
        * @return {T|undefined} The return value from the last call to the callback.
        */
-      function(feature) {
+      function (feature) {
         const geometry = feature.getGeometry();
         if (geometry.intersectsExtent(extent)) {
           const result = callback(feature);
@@ -649,7 +667,7 @@ class VectorSource extends Source {
    */
   getFeaturesAtCoordinate(coordinate) {
     const features = [];
-    this.forEachFeatureAtCoordinateDirect(coordinate, function(feature) {
+    this.forEachFeatureAtCoordinateDirect(coordinate, function (feature) {
       features.push(feature);
     });
     return features;
@@ -709,11 +727,16 @@ class VectorSource extends Source {
       /**
        * @param {import("../Feature.js").default<Geometry>} feature Feature.
        */
-      function(feature) {
+      function (feature) {
         if (filter(feature)) {
           const geometry = feature.getGeometry();
           const previousMinSquaredDistance = minSquaredDistance;
-          minSquaredDistance = geometry.closestPointXY(x, y, closestPoint, minSquaredDistance);
+          minSquaredDistance = geometry.closestPointXY(
+            x,
+            y,
+            closestPoint,
+            minSquaredDistance
+          );
           if (minSquaredDistance < previousMinSquaredDistance) {
             closestFeature = feature;
             // This is sneaky.  Reduce the extent that it is currently being
@@ -838,7 +861,9 @@ class VectorSource extends Source {
       this.uidIndex_[featureKey] = feature;
     }
     this.changed();
-    this.dispatchEvent(new VectorSourceEvent(VectorEventType.CHANGEFEATURE, feature));
+    this.dispatchEvent(
+      new VectorSourceEvent(VectorEventType.CHANGEFEATURE, feature)
+    );
   }
 
   /**
@@ -880,21 +905,20 @@ class VectorSource extends Source {
          * @param {{extent: import("../extent.js").Extent}} object Object.
          * @return {boolean} Contains.
          */
-        function(object) {
+        function (object) {
           return containsExtent(object.extent, extentToLoad);
         }
       );
       if (!alreadyLoaded) {
         this.loader_.call(this, extentToLoad, resolution, projection);
-        loadedExtentsRtree.insert(extentToLoad, { extent: extentToLoad.slice() });
+        loadedExtentsRtree.insert(extentToLoad, {
+          extent: extentToLoad.slice(),
+        });
         this.loading = this.loader_ !== VOID;
       }
     }
   }
 
-  /**
-   * @inheritDoc
-   */
   refresh() {
     this.clear(true);
     this.loadedExtentsRtree_.clear();
@@ -909,7 +933,7 @@ class VectorSource extends Source {
   removeLoadedExtent(extent) {
     const loadedExtentsRtree = this.loadedExtentsRtree_;
     let obj;
-    loadedExtentsRtree.forEachInExtent(extent, function(object) {
+    loadedExtentsRtree.forEachInExtent(extent, function (object) {
       if (equals(object.extent, extent)) {
         obj = object;
         return true;
@@ -956,7 +980,9 @@ class VectorSource extends Source {
       delete this.idIndex_[id.toString()];
     }
     delete this.uidIndex_[featureKey];
-    this.dispatchEvent(new VectorSourceEvent(VectorEventType.REMOVEFEATURE, feature));
+    this.dispatchEvent(
+      new VectorSourceEvent(VectorEventType.REMOVEFEATURE, feature)
+    );
   }
 
   /**

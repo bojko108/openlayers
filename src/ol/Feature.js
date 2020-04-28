@@ -1,10 +1,10 @@
 /**
  * @module ol/Feature
  */
+import BaseObject, { getChangeEventType } from "./Object.js";
+import EventType from "./events/EventType.js";
 import { assert } from "./asserts.js";
 import { listen, unlistenByKey } from "./events.js";
-import EventType from "./events/EventType.js";
-import BaseObject, { getChangeEventType } from "./Object.js";
 import { getVectorContext } from "./render.js";
 import { easeOut } from "./easing.js";
 
@@ -118,7 +118,7 @@ class Feature extends BaseObject {
     this._state = {
       selected: false,
       highlighted: false,
-      hidden: false
+      hidden: false,
     };
 
     /**
@@ -154,7 +154,7 @@ class Feature extends BaseObject {
     if (opt_geometryOrProperties) {
       if (
         typeof (
-          /** @type {?} */ (opt_geometryOrProperties.getSimplifiedGeometry)
+          /** @type {?} */ (opt_geometryOrProperties).getSimplifiedGeometry
         ) === "function"
       ) {
         const geometry = /** @type {Geometry} */ (opt_geometryOrProperties);
@@ -222,7 +222,7 @@ class Feature extends BaseObject {
     this._state = {
       selected: false,
       highlighted: false,
-      hidden: false
+      hidden: false,
     };
     this.changed();
   }
@@ -401,7 +401,7 @@ class Feature extends BaseObject {
     let result = [];
 
     if (layerInfo) {
-      result = layerInfo.fields.map(field => ({
+      result = layerInfo.fields.map((field) => ({
         name: field.name,
         alias: returnNames ? field.name : field.alias,
         visible: field.visible,
@@ -419,7 +419,7 @@ class Feature extends BaseObject {
           ? field.domain.getValue(props[field.name])
           : props[field.name],
         // probably code shouldn't be returned at all
-        code: field.hasDomain ? props[field.name] : undefined
+        code: field.hasDomain ? props[field.name] : undefined,
       }));
     } else {
       for (let name in props) {
@@ -427,7 +427,7 @@ class Feature extends BaseObject {
         result.push({
           name,
           alias: name,
-          value: props[name]
+          value: props[name],
         });
       }
     }
@@ -477,7 +477,7 @@ class Feature extends BaseObject {
         layer.removeFeature(flashedFeature);
         layer.un("postrender", animate);
       },
-      animate = event => {
+      animate = (event) => {
         const vectorContext = getVectorContext(event),
           frameState = event.frameState,
           flashGeom = flashedFeature.getGeometry().clone(),
@@ -490,16 +490,16 @@ class Feature extends BaseObject {
           style = createFeatureStyle({
             stroke: {
               color,
-              width: easeOut(elapsedRatio) * (options.radius * 2)
+              width: easeOut(elapsedRatio) * (options.radius * 2),
             },
             fill: { color },
             circle: {
               radius: newRadius,
               stroke: {
                 color,
-                width: easeOut(elapsedRatio) * (options.radius * 2)
-              }
-            }
+                width: easeOut(elapsedRatio) * (options.radius * 2),
+              },
+            },
           });
 
         if (elapsed > options.duration || !this.layer) {
@@ -553,11 +553,11 @@ export function createStyleFunction(obj) {
     if (Array.isArray(obj)) {
       styles = obj;
     } else {
-      assert(typeof (/** @type {?} */ (obj.getZIndex)) === "function", 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+      assert(typeof (/** @type {?} */ (obj).getZIndex) === "function", 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
       const style = /** @type {import("./style/Style.js").default} */ (obj);
       styles = [style];
     }
-    return function() {
+    return function () {
       return styles;
     };
   }

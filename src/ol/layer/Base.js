@@ -1,14 +1,14 @@
 /**
  * @module ol/layer/Base
  */
-import { abstract } from '../util.js';
-import BaseObject from '../Object.js';
-import LayerProperty from './Property.js';
-import { clamp } from '../math.js';
-import { assign } from '../obj.js';
-import { assert } from '../asserts.js';
+import BaseObject from "../Object.js";
+import LayerProperty from "./Property.js";
+import { abstract } from "../util.js";
+import { assert } from "../asserts.js";
+import { assign } from "../obj.js";
+import { clamp } from "../math.js";
 
-import LayerInfo from '../daemon/layers/info/LayerInfo.js';
+import LayerInfo from "../daemon/layers/info/LayerInfo.js";
 
 /**
  * @typedef {Object} Options
@@ -54,16 +54,26 @@ class BaseLayer extends BaseObject {
      */
     const properties = assign({}, options);
 
-    properties[LayerProperty.OPACITY] = options.opacity !== undefined ? options.opacity : 1;
-    assert(typeof properties[LayerProperty.OPACITY] === 'number', 64); // Layer opacity must be a number
+    properties[LayerProperty.OPACITY] =
+      options.opacity !== undefined ? options.opacity : 1;
+    assert(typeof properties[LayerProperty.OPACITY] === "number", 64); // Layer opacity must be a number
 
-    properties[LayerProperty.VISIBLE] = options.visible !== undefined ? options.visible : true;
+    properties[LayerProperty.VISIBLE] =
+      options.visible !== undefined ? options.visible : true;
     properties[LayerProperty.Z_INDEX] = options.zIndex;
-    properties[LayerProperty.MAX_RESOLUTION] = options.maxResolution !== undefined ? options.maxResolution : Infinity;
-    properties[LayerProperty.MIN_RESOLUTION] = options.minResolution !== undefined ? options.minResolution : 0;
-    properties[LayerProperty.MIN_ZOOM] = options.minZoom !== undefined ? options.minZoom : -Infinity;
-    properties[LayerProperty.MAX_ZOOM] = options.maxZoom !== undefined ? options.maxZoom : Infinity;
-    properties[LayerProperty.LAYER_INFO] = new LayerInfo(this, options.metadata);
+    properties[LayerProperty.MAX_RESOLUTION] =
+      options.maxResolution !== undefined ? options.maxResolution : Infinity;
+    properties[LayerProperty.MIN_RESOLUTION] =
+      options.minResolution !== undefined ? options.minResolution : 0;
+    properties[LayerProperty.MIN_ZOOM] =
+      options.minZoom !== undefined ? options.minZoom : -Infinity;
+    properties[LayerProperty.MAX_ZOOM] =
+      options.maxZoom !== undefined ? options.maxZoom : Infinity;
+
+    properties[LayerProperty.LAYER_INFO] = new LayerInfo(
+      this,
+      options.metadata
+    );
     properties[LayerProperty.STYLES] = undefined;
     properties[LayerProperty.LABELS] = undefined;
     delete properties.metadata;
@@ -72,7 +82,8 @@ class BaseLayer extends BaseObject {
      * @type {string}
      * @private
      */
-    this.className_ = properties.className !== undefined ? options.className : 'ol-layer';
+    this.className_ =
+      properties.className !== undefined ? options.className : "ol-layer";
     delete properties.className;
 
     this.setProperties(properties);
@@ -121,16 +132,19 @@ class BaseLayer extends BaseObject {
    */
   getLayerState(opt_managed) {
     /** @type {import("./Layer.js").State} */
-    const state = this.state_ || /** @type {?} */ ({
-      layer: this,
-      managed: opt_managed === undefined ? true : opt_managed
-    });
+    const state =
+      this.state_ ||
+      /** @type {?} */ ({
+        layer: this,
+        managed: opt_managed === undefined ? true : opt_managed,
+      });
     const zIndex = this.getZIndex();
     state.opacity = clamp(Math.round(this.getOpacity() * 100) / 100, 0, 1);
     state.sourceState = this.getSourceState();
     state.visible = this.getVisible();
     state.extent = this.getExtent();
-    state.zIndex = zIndex !== undefined ? zIndex : (state.managed === false ? Infinity : 0);
+    state.zIndex =
+      zIndex !== undefined ? zIndex : state.managed === false ? Infinity : 0;
     state.maxResolution = this.getMaxResolution();
     state.minResolution = Math.max(this.getMinResolution(), 0);
     state.minZoom = this.getMinZoom();
@@ -168,7 +182,9 @@ class BaseLayer extends BaseObject {
    * @api
    */
   getExtent() {
-    return /** @type {import("../extent.js").Extent|undefined} */ (this.get(LayerProperty.EXTENT));
+    return /** @type {import("../extent.js").Extent|undefined} */ (this.get(
+      LayerProperty.EXTENT
+    ));
   }
 
   /**
@@ -312,7 +328,7 @@ class BaseLayer extends BaseObject {
    * @api
    */
   setOpacity(opacity) {
-    assert(typeof opacity === 'number', 64); // Layer opacity must be a number
+    assert(typeof opacity === "number", 64); // Layer opacity must be a number
     this.set(LayerProperty.OPACITY, opacity);
   }
 
@@ -338,7 +354,7 @@ class BaseLayer extends BaseObject {
   }
 
   /**
-   * @inheritDoc
+   * Clean up.
    */
   disposeInternal() {
     if (this.state_) {

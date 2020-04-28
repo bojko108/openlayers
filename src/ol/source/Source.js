@@ -1,10 +1,10 @@
 /**
  * @module ol/source/Source
  */
-import { abstract } from '../util.js';
-import BaseObject from '../Object.js';
-import { get as getProjection } from '../proj.js';
-import SourceState from './State.js';
+import BaseObject from "../Object.js";
+import SourceState from "./State.js";
+import { abstract } from "../util.js";
+import { get as getProjection } from "../proj.js";
 
 /**
  * A function that returns a string or an array of strings representing source
@@ -29,7 +29,7 @@ import SourceState from './State.js';
  * @property {AttributionLike} [attributions]
  * @property {boolean} [attributionsCollapsible=true] Attributions are collapsible.
  * @property {import("../proj.js").ProjectionLike} [projection] Projection. Default is the view projection.
- * @property {SourceState} [state='ready']
+ * @property {import("./State.js").default} [state='ready']
  * @property {boolean} [wrapX=false]
  */
 
@@ -51,7 +51,7 @@ class Source extends BaseObject {
     super();
 
     /**
-     * this is needed when we add features to the source so we can 
+     * this is needed when we add features to the source so we can
      * `feature.setLayer(this.layer)`
      * @private
      * @type {import("../layer/Layer").default}
@@ -74,7 +74,10 @@ class Source extends BaseObject {
      * @private
      * @type {boolean}
      */
-    this.attributionsCollapsible_ = options.attributionsCollapsible !== undefined ? options.attributionsCollapsible : true;
+    this.attributionsCollapsible_ =
+      options.attributionsCollapsible !== undefined
+        ? options.attributionsCollapsible
+        : true;
 
     /**
      * This source is currently loading data. Sources that defer loading to the
@@ -85,9 +88,10 @@ class Source extends BaseObject {
 
     /**
      * @private
-     * @type {SourceState}
+     * @type {import("./State.js").default}
      */
-    this.state_ = options.state !== undefined ? options.state : SourceState.READY;
+    this.state_ =
+      options.state !== undefined ? options.state : SourceState.READY;
 
     /**
      * @private
@@ -102,7 +106,7 @@ class Source extends BaseObject {
   setLayer(layer) {
     this._layer = layer;
   }
-  
+
   /**
    * @type {import("../layer/Layer").default}
    */
@@ -144,7 +148,7 @@ class Source extends BaseObject {
 
   /**
    * Get the state of the source, see {@link module:ol/source/State~State} for possible states.
-   * @return {SourceState} State.
+   * @return {import("./State.js").default} State.
    * @api
    */
   getState() {
@@ -180,7 +184,7 @@ class Source extends BaseObject {
 
   /**
    * Set the state of the source.
-   * @param {SourceState} state State.
+   * @param {import("./State.js").default} state State.
    * @protected
    */
   setState(state) {
@@ -199,16 +203,16 @@ function adaptAttributions(attributionLike) {
     return null;
   }
   if (Array.isArray(attributionLike)) {
-    return function(frameState) {
+    return function (frameState) {
       return attributionLike;
     };
   }
 
-  if (typeof attributionLike === 'function') {
+  if (typeof attributionLike === "function") {
     return attributionLike;
   }
 
-  return function(frameState) {
+  return function (frameState) {
     return [attributionLike];
   };
 }

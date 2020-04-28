@@ -1,14 +1,15 @@
 /**
  * @module ol/layer/Layer
  */
-import { listen, unlistenByKey } from '../events.js';
-import EventType from '../events/EventType.js';
-import { getChangeEventType } from '../Object.js';
-import BaseLayer from './Base.js';
-import LayerProperty from './Property.js';
-import { assign } from '../obj.js';
-import RenderEventType from '../render/EventType.js';
-import SourceState from '../source/State.js';
+import BaseLayer from "./Base.js";
+import EventType from "../events/EventType.js";
+import LayerProperty from "./Property.js";
+import RenderEventType from "../render/EventType.js";
+import SourceState from "../source/State.js";
+import { assign } from "../obj.js";
+import { getChangeEventType } from "../Object.js";
+import { listen, unlistenByKey } from "../events.js";
+import { assert } from "../asserts.js";
 
 /**
  * @typedef {function(import("../PluggableMap.js").FrameState):HTMLElement} RenderFunction
@@ -29,6 +30,10 @@ import SourceState from '../source/State.js';
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
  * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
+ * be visible.
  * @property {import("../source/Source.js").default} [source] Source for this layer.  If not provided to the constructor,
  * the source can be set by calling {@link module:ol/layer/Layer#setSource layer.setSource(source)} after
  * construction.
@@ -40,9 +45,9 @@ import SourceState from '../source/State.js';
 
 /**
  * @typedef {Object} State
- * @property {import("./Base.js").default} layer
+ * @property {import("./Layer.js").default} layer
  * @property {number} opacity Opacity, the value is rounded to two digits to appear after the decimal point.
- * @property {SourceState} sourceState
+ * @property {import("../source/State.js").default} sourceState
  * @property {boolean} visible
  * @property {boolean} managed
  * @property {import("../extent.js").Extent} [extent]
@@ -124,14 +129,20 @@ class Layer extends BaseLayer {
       this.setMap(options.map);
     }
 
-    this.addEventListener(getChangeEventType(LayerProperty.SOURCE), this.handleSourcePropertyChange_);
+    this.addEventListener(
+      getChangeEventType(LayerProperty.SOURCE),
+      this.handleSourcePropertyChange_
+    );
 
-    const source = options.source ? /** @type {SourceType} */ (options.source) : null;
+    const source = options.source
+      ? /** @type {SourceType} */ (options.source)
+      : null;
     this.setSource(source);
   }
 
   /**
-   * @inheritDoc
+   * @param {Array<import("./Layer.js").default>=} opt_array Array of layers (to be modified in place).
+   * @return {Array<import("./Layer.js").default>} Array of layers.
    */
   getLayersArray(opt_array) {
     const array = opt_array ? opt_array : [];
@@ -140,7 +151,8 @@ class Layer extends BaseLayer {
   }
 
   /**
-   * @inheritDoc
+   * @param {Array<import("./Layer.js").State>=} opt_states Optional list of layer states (to be modified in place).
+   * @return {Array<import("./Layer.js").State>} List of layer states.
    */
   getLayerStatesArray(opt_states) {
     const states = opt_states ? opt_states : [];
@@ -184,7 +196,12 @@ class Layer extends BaseLayer {
     }
     const source = this.getSource();
     if (source) {
-      this.sourceChangeKey_ = listen(source, EventType.CHANGE, this.handleSourceChange_, this);
+      this.sourceChangeKey_ = listen(
+        source,
+        EventType.CHANGE,
+        this.handleSourceChange_,
+        this
+      );
     }
     this.changed();
   }
@@ -244,9 +261,18 @@ class Layer extends BaseLayer {
       this.mapPrecomposeKey_ = listen(
         map,
         RenderEventType.PRECOMPOSE,
-        function(evt) {
+        function (evt) {
           const renderEvent = /** @type {import("../render/Event.js").default} */ (evt);
-          renderEvent.frameState.layerStatesArray.push(this.getLayerState(false));
+          const layerStatesArray = renderEvent.frameState.layerStatesArray;
+          const layerState = this.getLayerState(false);
+          // A layer can only be added to the map once. Use either `layer.setMap()` or `map.addLayer()`, not both.
+          assert(
+            !layerStatesArray.some(function (arrayLayerState) {
+              return arrayLayerState.layer === layerState.layer;
+            }),
+            67
+          );
+          layerStatesArray.push(layerState);
         },
         this
       );
@@ -296,7 +322,7 @@ class Layer extends BaseLayer {
   }
 
   /**
-   * @inheritDoc
+   * Clean up.
    */
   disposeInternal() {
     this.setSource(null);
@@ -316,7 +342,10 @@ export function inView(layerState, viewState) {
     return false;
   }
   const resolution = viewState.resolution;
-  if (resolution < layerState.minResolution || resolution >= layerState.maxResolution) {
+  if (
+    resolution < layerState.minResolution ||
+    resolution >= layerState.maxResolution
+  ) {
     return false;
   }
   const zoom = viewState.zoom;

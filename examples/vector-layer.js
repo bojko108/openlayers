@@ -1,92 +1,92 @@
-import Map from '../src/ol/Map.js';
-import View from '../src/ol/View.js';
-import GeoJSON from '../src/ol/format/GeoJSON.js';
-import VectorLayer from '../src/ol/layer/Vector.js';
-import VectorSource from '../src/ol/source/Vector.js';
-import { Fill, Stroke, Style, Text } from '../src/ol/style.js';
+import GeoJSON from "../src/ol/format/GeoJSON.js";
+import Map from "../src/ol/Map.js";
+import VectorLayer from "../src/ol/layer/Vector.js";
+import VectorSource from "../src/ol/source/Vector.js";
+import View from "../src/ol/View.js";
+import { Fill, Stroke, Style, Text } from "../src/ol/style.js";
 
 const style = new Style({
   fill: new Fill({
-    color: 'rgba(255, 255, 255, 0.6)'
+    color: "rgba(255, 255, 255, 0.6)",
   }),
   stroke: new Stroke({
-    color: '#319FD3',
-    width: 1
+    color: "#319FD3",
+    width: 1,
   }),
   text: new Text({
-    font: '12px Calibri,sans-serif',
+    font: "12px Calibri,sans-serif",
     fill: new Fill({
-      color: '#000'
+      color: "#000",
     }),
     stroke: new Stroke({
-      color: '#fff',
-      width: 3
-    })
-  })
+      color: "#fff",
+      width: 3,
+    }),
+  }),
 });
 
 const vectorLayer = new VectorLayer({
-  metadata: { name: 'vector' },
+  metadata: { name: "vector" },
   source: new VectorSource({
-    url: 'data/geojson/countries.geojson',
-    format: new GeoJSON()
+    url: "data/geojson/countries.geojson",
+    format: new GeoJSON(),
   }),
-  style: function(feature) {
-    style.getText().setText(feature.get('name'));
+  style: function (feature) {
+    style.getText().setText(feature.get("name"));
     return style;
-  }
+  },
 });
 
 const map = new Map({
   layers: [vectorLayer],
-  target: 'map',
+  target: "map",
   view: new View({
     center: [0, 0],
-    zoom: 1
-  })
+    zoom: 1,
+  }),
 });
 
 const highlightStyle = new Style({
   stroke: new Stroke({
-    color: '#f00',
-    width: 1
+    color: "#f00",
+    width: 1,
   }),
   fill: new Fill({
-    color: 'rgba(255,0,0,0.1)'
+    color: "rgba(255,0,0,0.1)",
   }),
   text: new Text({
-    font: '12px Calibri,sans-serif',
+    font: "12px Calibri,sans-serif",
     fill: new Fill({
-      color: '#000'
+      color: "#000",
     }),
     stroke: new Stroke({
-      color: '#f00',
-      width: 3
-    })
-  })
+      color: "#f00",
+      width: 3,
+    }),
+  }),
 });
 
 const featureOverlay = new VectorLayer({
-  metadata: { name: 'overlay' },
+  metadata: { name: "overlay" },
   source: new VectorSource(),
   map: map,
-  style: function(feature) {
-    highlightStyle.getText().setText(feature.get('name'));
+  style: function (feature) {
+    highlightStyle.getText().setText(feature.get("name"));
     return highlightStyle;
-  }
+  },
 });
 
 let highlight;
-const displayFeatureInfo = function(pixel) {
-  const feature = map.forEachFeatureAtPixel(pixel, function(feature) {
+const displayFeatureInfo = function (pixel) {
+  const feature = map.forEachFeatureAtPixel(pixel, function (feature) {
     return feature;
   });
 
-  const info = document.getElementById('info');
+  const info = document.getElementById("info");
   if (feature) {
-    info.innerHTML = feature.getId() + ': ' + feature.get('name');
+    info.innerHTML = feature.getId() + ": " + feature.get("name");
   } else {
-    info.innerHTML = '&nbsp;';
+    info.innerHTML = "&nbsp;";
   }
 
   if (feature !== highlight) {
@@ -100,7 +100,7 @@ const displayFeatureInfo = function(pixel) {
   }
 };
 
-map.on('pointermove', function(evt) {
+map.on("pointermove", function (evt) {
   if (evt.dragging) {
     return;
   }
@@ -108,6 +108,6 @@ map.on('pointermove', function(evt) {
   displayFeatureInfo(pixel);
 });
 
-map.on('click', function(evt) {
+map.on("click", function (evt) {
   displayFeatureInfo(evt.pixel);
 });

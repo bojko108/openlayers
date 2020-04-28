@@ -1,9 +1,9 @@
 /**
  * @module ol/layer/BaseTile
  */
-import Layer from './Layer.js';
-import TileProperty from './TileProperty.js';
-import { assign } from '../obj.js';
+import Layer from "./Layer.js";
+import TileProperty from "./TileProperty.js";
+import { assign } from "../obj.js";
 
 /**
  * @typedef {Object} Options
@@ -19,6 +19,10 @@ import { assign } from '../obj.js';
  * @property {number} [minResolution] The minimum resolution (inclusive) at which this layer will be
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
+ * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
  * be visible.
  * @property {number} [preload=0] Preload. Load low-resolution tiles up to `preload` levels. `0`
  * means no preloading.
@@ -55,13 +59,17 @@ class BaseTileLayer extends Layer {
     delete baseOptions.useInterimTilesOnError;
 
     if (baseOptions.metadata) {
-      baseOptions.metadata.type = 'basemap';
+      baseOptions.metadata.type = "basemap";
     }
-    
+
     super(baseOptions);
 
     this.setPreload(options.preload !== undefined ? options.preload : 0);
-    this.setUseInterimTilesOnError(options.useInterimTilesOnError !== undefined ? options.useInterimTilesOnError : true);
+    this.setUseInterimTilesOnError(
+      options.useInterimTilesOnError !== undefined
+        ? options.useInterimTilesOnError
+        : true
+    );
   }
 
   /**
@@ -91,7 +99,9 @@ class BaseTileLayer extends Layer {
    * @api
    */
   getUseInterimTilesOnError() {
-    return /** @type {boolean} */ (this.get(TileProperty.USE_INTERIM_TILES_ON_ERROR));
+    return /** @type {boolean} */ (this.get(
+      TileProperty.USE_INTERIM_TILES_ON_ERROR
+    ));
   }
 
   /**

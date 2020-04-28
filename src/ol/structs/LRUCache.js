@@ -3,9 +3,6 @@
  */
 
 import {assert} from '../asserts.js';
-import EventTarget from '../events/Target.js';
-import EventType from '../events/EventType.js';
-
 
 /**
  * @typedef {Object} Entry
@@ -14,7 +11,6 @@ import EventType from '../events/EventType.js';
  * @property {Object} older
  * @property {*} value_
  */
-
 
 /**
  * @classdesc
@@ -25,19 +21,16 @@ import EventType from '../events/EventType.js';
  * @fires import("../events/Event.js").default
  * @template T
  */
-class LRUCache extends EventTarget {
-
+class LRUCache {
   /**
    * @param {number=} opt_highWaterMark High water mark.
    */
   constructor(opt_highWaterMark) {
-
-    super();
-
     /**
      * @type {number}
      */
-    this.highWaterMark = opt_highWaterMark !== undefined ? opt_highWaterMark : 2048;
+    this.highWaterMark =
+      opt_highWaterMark !== undefined ? opt_highWaterMark : 2048;
 
     /**
      * @private
@@ -62,9 +55,7 @@ class LRUCache extends EventTarget {
      * @type {?Entry}
      */
     this.newest_ = null;
-
   }
-
 
   /**
    * @return {boolean} Can expire cache.
@@ -72,7 +63,6 @@ class LRUCache extends EventTarget {
   canExpireCache() {
     return this.getCount() > this.highWaterMark;
   }
-
 
   /**
    * FIXME empty description for jsdoc
@@ -82,9 +72,7 @@ class LRUCache extends EventTarget {
     this.entries_ = {};
     this.oldest_ = null;
     this.newest_ = null;
-    this.dispatchEvent(EventType.CLEAR);
   }
-
 
   /**
    * @param {string} key Key.
@@ -93,7 +81,6 @@ class LRUCache extends EventTarget {
   containsKey(key) {
     return this.entries_.hasOwnProperty(key);
   }
-
 
   /**
    * @param {function(T, string, LRUCache<T>): ?} f The function
@@ -109,7 +96,6 @@ class LRUCache extends EventTarget {
     }
   }
 
-
   /**
    * @param {string} key Key.
    * @param {*=} opt_options Options (reserverd for subclasses).
@@ -117,8 +103,7 @@ class LRUCache extends EventTarget {
    */
   get(key, opt_options) {
     const entry = this.entries_[key];
-    assert(entry !== undefined,
-      15); // Tried to get a value for a key that does not exist in the cache
+    assert(entry !== undefined, 15); // Tried to get a value for a key that does not exist in the cache
     if (entry === this.newest_) {
       return entry.value_;
     } else if (entry === this.oldest_) {
@@ -134,7 +119,6 @@ class LRUCache extends EventTarget {
     this.newest_ = entry;
     return entry.value_;
   }
-
 
   /**
    * Remove an entry from the cache.
@@ -163,14 +147,12 @@ class LRUCache extends EventTarget {
     return entry.value_;
   }
 
-
   /**
    * @return {number} Count.
    */
   getCount() {
     return this.count_;
   }
-
 
   /**
    * @return {Array<string>} Keys.
@@ -185,7 +167,6 @@ class LRUCache extends EventTarget {
     return keys;
   }
 
-
   /**
    * @return {Array<T>} Values.
    */
@@ -199,14 +180,12 @@ class LRUCache extends EventTarget {
     return values;
   }
 
-
   /**
    * @return {T} Last value.
    */
   peekLast() {
     return this.oldest_.value_;
   }
-
 
   /**
    * @return {string} Last key.
@@ -215,7 +194,6 @@ class LRUCache extends EventTarget {
     return this.oldest_.key_;
   }
 
-
   /**
    * Get the key of the newest item in the cache.  Throws if the cache is empty.
    * @return {string} The newest key.
@@ -223,7 +201,6 @@ class LRUCache extends EventTarget {
   peekFirstKey() {
     return this.newest_.key_;
   }
-
 
   /**
    * @return {T} value Value.
@@ -242,7 +219,6 @@ class LRUCache extends EventTarget {
     return entry.value_;
   }
 
-
   /**
    * @param {string} key Key.
    * @param {T} value Value.
@@ -252,19 +228,17 @@ class LRUCache extends EventTarget {
     this.entries_[key].value_ = value;
   }
 
-
   /**
    * @param {string} key Key.
    * @param {T} value Value.
    */
   set(key, value) {
-    assert(!(key in this.entries_),
-      16); // Tried to set a value for a key that is used already
+    assert(!(key in this.entries_), 16); // Tried to set a value for a key that is used already
     const entry = {
       key_: key,
       newer: null,
       older: this.newest_,
-      value_: value
+      value_: value,
     };
     if (!this.newest_) {
       this.oldest_ = entry;
@@ -276,7 +250,6 @@ class LRUCache extends EventTarget {
     ++this.count_;
   }
 
-
   /**
    * Set a maximum number of entries for the cache.
    * @param {number} size Cache size.
@@ -285,7 +258,6 @@ class LRUCache extends EventTarget {
   setSize(size) {
     this.highWaterMark = size;
   }
-
 }
 
 export default LRUCache;

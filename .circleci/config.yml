@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:latest-browsers
+      - image: circleci/node:current-browsers
 
     working_directory: ~/repo
 
@@ -11,8 +11,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          - v1-dependencies-
+          - v2-dependencies-{{ checksum "package-lock.json" }}
 
       - run:
           name: Install Dependencies
@@ -21,11 +20,14 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+          key: v2-dependencies-{{ checksum "package-lock.json" }}
 
       - run:
           name: Run Tests
           command: npm test
+
+      - store_artifacts:
+          path: /home/circleci/.npm/_logs
 
       - store_artifacts:
           path: coverage/

@@ -2,24 +2,27 @@
  * @module ol/control/MousePosition
  */
 
-import 'elm-pep';
-import {listen} from '../events.js';
-import EventType from '../pointer/EventType.js';
-import {getChangeEventType} from '../Object.js';
-import Control from './Control.js';
-import {getTransformFromProjections, identityTransform, get as getProjection, getUserProjection} from '../proj.js';
-
+import "elm-pep";
+import Control from "./Control.js";
+import EventType from "../pointer/EventType.js";
+import { getChangeEventType } from "../Object.js";
+import {
+  get as getProjection,
+  getTransformFromProjections,
+  getUserProjection,
+  identityTransform,
+} from "../proj.js";
+import { listen } from "../events.js";
 
 /**
  * @type {string}
  */
-const PROJECTION = 'projection';
+const PROJECTION = "projection";
 
 /**
  * @type {string}
  */
-const COORDINATE_FORMAT = 'coordinateFormat';
-
+const COORDINATE_FORMAT = "coordinateFormat";
 
 /**
  * @typedef {Object} Options
@@ -38,7 +41,6 @@ const COORDINATE_FORMAT = 'coordinateFormat';
  * string `''`).
  */
 
-
 /**
  * @classdesc
  * A control to show the 2D coordinates of the mouse cursor. By default, these
@@ -52,24 +54,25 @@ const COORDINATE_FORMAT = 'coordinateFormat';
  * @api
  */
 class MousePosition extends Control {
-
   /**
    * @param {Options=} opt_options Mouse position options.
    */
   constructor(opt_options) {
-
     const options = opt_options ? opt_options : {};
 
-    const element = document.createElement('div');
-    element.className = options.className !== undefined ? options.className : 'ol-mouse-position';
-
     super({
-      element: element,
-      render: options.render || render,
-      target: options.target
+      render: options.render,
+      target: options.target,
     });
 
-    this.addEventListener(getChangeEventType(PROJECTION), this.handleProjectionChanged_);
+    const element = this.createElement();
+    element.className =
+      options.className !== undefined ? options.className : "ol-mouse-position";
+
+    this.addEventListener(
+      getChangeEventType(PROJECTION),
+      this.handleProjectionChanged_
+    );
 
     if (options.coordinateFormat) {
       this.setCoordinateFormat(options.coordinateFormat);
@@ -82,7 +85,8 @@ class MousePosition extends Control {
      * @private
      * @type {string}
      */
-    this.undefinedHTML_ = options.undefinedHTML !== undefined ? options.undefinedHTML : '&#160;';
+    this.undefinedHTML_ =
+      options.undefinedHTML !== undefined ? options.undefinedHTML : "&#160;";
 
     /**
      * @private
@@ -113,7 +117,6 @@ class MousePosition extends Control {
      * @type {import("../pixel.js").Pixel}
      */
     this.lastMouseMovePixel_ = null;
-
   }
 
   /**
@@ -132,9 +135,9 @@ class MousePosition extends Control {
    * @api
    */
   getCoordinateFormat() {
-    return (
-      /** @type {import("../coordinate.js").CoordinateFormat|undefined} */ (this.get(COORDINATE_FORMAT))
-    );
+    return /** @type {import("../coordinate.js").CoordinateFormat|undefined} */ (this.get(
+      COORDINATE_FORMAT
+    ));
   }
 
   /**
@@ -145,9 +148,9 @@ class MousePosition extends Control {
    * @api
    */
   getProjection() {
-    return (
-      /** @type {import("../proj/Projection.js").default|undefined} */ (this.get(PROJECTION))
-    );
+    return /** @type {import("../proj/Projection.js").default|undefined} */ (this.get(
+      PROJECTION
+    ));
   }
 
   /**
@@ -170,7 +173,10 @@ class MousePosition extends Control {
   }
 
   /**
-   * @inheritDoc
+   * Remove the control from its current map and attach it to the new map.
+   * Subclasses may set up event handlers to get notified about changes to
+   * the map here.
+   * @param {import("../PluggableMap.js").default} map Map.
    * @api
    */
   setMap(map) {
@@ -221,7 +227,9 @@ class MousePosition extends Control {
         const projection = this.getProjection();
         if (projection) {
           this.transform_ = getTransformFromProjections(
-            this.mapProjection_, projection);
+            this.mapProjection_,
+            projection
+          );
         } else {
           this.transform_ = identityTransform;
         }
@@ -232,7 +240,9 @@ class MousePosition extends Control {
         const userProjection = getUserProjection();
         if (userProjection) {
           this.transform_ = getTransformFromProjections(
-            this.mapProjection_, userProjection);
+            this.mapProjection_,
+            userProjection
+          );
         }
         this.transform_(coordinate, coordinate);
         const coordinateFormat = this.getCoordinateFormat();
@@ -248,27 +258,24 @@ class MousePosition extends Control {
       this.renderedHTML_ = html;
     }
   }
-}
 
-
-/**
- * Update the projection. Rendering of the coordinates is done in
- * `handleMouseMove` and `handleMouseUp`.
- * @param {import("../MapEvent.js").default} mapEvent Map event.
- * @this {MousePosition}
- * @api
- */
-export function render(mapEvent) {
-  const frameState = mapEvent.frameState;
-  if (!frameState) {
-    this.mapProjection_ = null;
-  } else {
-    if (this.mapProjection_ != frameState.viewState.projection) {
-      this.mapProjection_ = frameState.viewState.projection;
-      this.transform_ = null;
+  /**
+   * Update the projection. Rendering of the coordinates is done in
+   * `handleMouseMove` and `handleMouseUp`.
+   * @param {import("../MapEvent.js").default} mapEvent Map event.
+   * @override
+   */
+  render(mapEvent) {
+    const frameState = mapEvent.frameState;
+    if (!frameState) {
+      this.mapProjection_ = null;
+    } else {
+      if (this.mapProjection_ != frameState.viewState.projection) {
+        this.mapProjection_ = frameState.viewState.projection;
+        this.transform_ = null;
+      }
     }
   }
 }
-
 
 export default MousePosition;

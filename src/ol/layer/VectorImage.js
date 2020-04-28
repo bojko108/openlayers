@@ -2,8 +2,8 @@
  * @module ol/layer/VectorImage
  */
 import BaseVectorLayer from './BaseVector.js';
-import {assign} from '../obj.js';
 import CanvasVectorImageLayerRenderer from '../renderer/canvas/VectorImageLayer.js';
+import {assign} from '../obj.js';
 
 /**
  * @typedef {Object} Options
@@ -19,6 +19,10 @@ import CanvasVectorImageLayerRenderer from '../renderer/canvas/VectorImageLayer.
  * @property {number} [minResolution] The minimum resolution (inclusive) at which this layer will be
  * visible.
  * @property {number} [maxResolution] The maximum resolution (exclusive) below which this layer will
+ * be visible.
+ * @property {number} [minZoom] The minimum view zoom level (exclusive) above which this layer will be
+ * visible.
+ * @property {number} [maxZoom] The maximum view zoom level (inclusive) at which this layer will
  * be visible.
  * @property {import("../render.js").OrderFunction} [renderOrder] Render order. Function to be used when sorting
  * features before rendering. By default features are drawn in the order that they are created. Use
@@ -46,7 +50,6 @@ import CanvasVectorImageLayerRenderer from '../renderer/canvas/VectorImageLayer.
  * viewport extent. A larger ratio avoids cut images during panning, but will cause a decrease in performance.
  */
 
-
 /**
  * @classdesc
  * Vector data that is rendered client-side.
@@ -71,8 +74,8 @@ class VectorImageLayer extends BaseVectorLayer {
      * @type {number}
      * @private
      */
-    this.imageRatio_ = options.imageRatio !== undefined ? options.imageRatio : 1;
-
+    this.imageRatio_ =
+      options.imageRatio !== undefined ? options.imageRatio : 1;
   }
 
   /**
@@ -85,12 +88,10 @@ class VectorImageLayer extends BaseVectorLayer {
   /**
    * Create a renderer for this layer.
    * @return {import("../renderer/Layer.js").default} A layer renderer.
-   * @protected
    */
   createRenderer() {
     return new CanvasVectorImageLayerRenderer(this);
   }
 }
-
 
 export default VectorImageLayer;

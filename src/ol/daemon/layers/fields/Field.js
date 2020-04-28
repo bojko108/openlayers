@@ -1,5 +1,5 @@
-import Domain from './Domain';
-import { addDomain, getDomain } from './index.js';
+import Domain from "./Domain";
+import { addDomain, getDomain } from "./index.js";
 
 /**
  * @typedef {Object} FieldType
@@ -27,49 +27,49 @@ export default class Field {
   constructor(data) {
     /**
      * field name
-     * @private
+     * @public
      * @type {String}
      */
     this.name = data.name;
     /**
      * field alias
-     * @private
+     * @public
      * @type {String}
      */
     this.alias = data.alias || this.name;
     /**
      * is the field visible in attribute editor
-     * @private
+     * @public
      * @type {Boolean}
      */
     this.visible = data.visible !== undefined ? data.visible : true;
     /**
      * is the field editable
-     * @private
+     * @public
      * @type {Boolean}
      */
     this.editable = data.editable !== undefined ? data.editable : false;
     /**
      * field type
-     * @private
+     * @public
      * @type {String}
      */
     this.type = data.type;
     /**
      * field default value
-     * @private
+     * @public
      * @type {Object}
      */
     this.defaultValue = data.defaultValue;
     /**
      * does the field has a domain
-     * @private
+     * @public
      * @type {Boolean}
      */
     this._hasDomain = false;
     /**
      * domain data
-     * @private
+     * @public
      * @type {Domain}
      */
     this._domain = undefined;

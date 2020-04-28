@@ -1,21 +1,26 @@
 /**
  * @module ol/interaction/DragPan
  */
-import {scale as scaleCoordinate, rotate as rotateCoordinate} from '../coordinate.js';
-import {easeOut} from '../easing.js';
-import {noModifierKeys, primaryAction, focus} from '../events/condition.js';
+import PointerInteraction, {
+  centroid as centroidFromPointers,
+} from './Pointer.js';
 import {FALSE} from '../functions.js';
-import PointerInteraction, {centroid as centroidFromPointers} from './Pointer.js';
-
+import {easeOut} from '../easing.js';
+import {focus, noModifierKeys, primaryAction} from '../events/condition.js';
+import {
+  rotate as rotateCoordinate,
+  scale as scaleCoordinate,
+} from '../coordinate.js';
 
 /**
  * @typedef {Object} Options
  * @property {import("../events/condition.js").Condition} [condition] A function that takes an {@link module:ol/MapBrowserEvent~MapBrowserEvent} and returns a boolean
  * to indicate whether that event should be handled.
  * Default is {@link module:ol/events/condition~noModifierKeys} and {@link module:ol/events/condition~primaryAction}.
+ * In addition, if there is a `tabindex` attribute on the map element,
+ * {@link module:ol/events/condition~focus} will also be applied.
  * @property {import("../Kinetic.js").default} [kinetic] Kinetic inertia to apply to the pan.
  */
-
 
 /**
  * @classdesc
@@ -27,9 +32,8 @@ class DragPan extends PointerInteraction {
    * @param {Options=} opt_options Options.
    */
   constructor(opt_options) {
-
     super({
-      stopDown: FALSE
+      stopDown: FALSE,
     });
 
     const options = opt_options ? opt_options : {};
@@ -66,7 +70,6 @@ class DragPan extends PointerInteraction {
      * @type {boolean}
      */
     this.noKinetic_ = false;
-
   }
 
   /**
@@ -82,9 +85,9 @@ class DragPan extends PointerInteraction {
     return pass && this.condition_(mapBrowserEvent);
   }
 
-
   /**
-   * @inheritDoc
+   * Handle pointer drag events.
+   * @param {import("../MapBrowserPointerEvent.js").default} mapBrowserEvent Event.
    */
   handleDragEvent(mapBrowserEvent) {
     if (!this.panning_) {
@@ -100,7 +103,7 @@ class DragPan extends PointerInteraction {
       if (this.lastCentroid) {
         const delta = [
           this.lastCentroid[0] - centroid[0],
-          centroid[1] - this.lastCentroid[1]
+          centroid[1] - this.lastCentroid[1],
         ];
         const map = mapBrowserEvent.map;
         const view = map.getView();
@@ -119,7 +122,9 @@ class DragPan extends PointerInteraction {
   }
 
   /**
-   * @inheritDoc
+   * Handle pointer up events.
+   * @param {import("../MapBrowserPointerEvent.js").default} mapBrowserEvent Event.
+   * @return {boolean} If the event was consumed.
    */
   handleUpEvent(mapBrowserEvent) {
     const map = mapBrowserEvent.map;
@@ -132,12 +137,12 @@ class DragPan extends PointerInteraction {
         const centerpx = map.getPixelFromCoordinateInternal(center);
         const dest = map.getCoordinateFromPixelInternal([
           centerpx[0] - distance * Math.cos(angle),
-          centerpx[1] - distance * Math.sin(angle)
+          centerpx[1] - distance * Math.sin(angle),
         ]);
         view.animateInternal({
           center: view.getConstrainedCenter(dest),
           duration: 500,
-          easing: easeOut
+          easing: easeOut,
         });
       }
       if (this.panning_) {
@@ -157,10 +162,15 @@ class DragPan extends PointerInteraction {
   }
 
   /**
-   * @inheritDoc
+   * Handle pointer down events.
+   * @param {import("../MapBrowserPointerEvent.js").default} mapBrowserEvent Event.
+   * @return {boolean} If the event was consumed.
    */
   handleDownEvent(mapBrowserEvent) {
-    if (this.targetPointers.length > 0 && this.conditionInternal_(mapBrowserEvent)) {
+    if (
+      this.targetPointers.length > 0 &&
+      this.conditionInternal_(mapBrowserEvent)
+    ) {
       const map = mapBrowserEvent.map;
       const view = map.getView();
       this.lastCentroid = null;
