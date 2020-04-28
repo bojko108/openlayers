@@ -9,7 +9,6 @@ import MapEvent from './MapEvent.js';
  * See {@link module:ol/PluggableMap~PluggableMap} for which events trigger a map browser event.
  */
 class MapBrowserEvent extends MapEvent {
-
   /**
    * @param {string} type Event type.
    * @param {import("./PluggableMap.js").default} map Map.
@@ -18,7 +17,6 @@ class MapBrowserEvent extends MapEvent {
    * @param {?import("./PluggableMap.js").FrameState=} opt_frameState Frame state.
    */
   constructor(type, map, browserEvent, opt_dragging, opt_frameState) {
-
     super(type, map, opt_frameState);
 
     /**
@@ -49,7 +47,6 @@ class MapBrowserEvent extends MapEvent {
      * @api
      */
     this.dragging = opt_dragging !== undefined ? opt_dragging : false;
-
   }
 
   /**
@@ -86,7 +83,6 @@ class MapBrowserEvent extends MapEvent {
   /**
    * Prevents the default browser action.
    * See https://developer.mozilla.org/en-US/docs/Web/API/event.preventDefault.
-   * @override
    * @api
    */
   preventDefault() {
@@ -97,7 +93,6 @@ class MapBrowserEvent extends MapEvent {
   /**
    * Prevents further propagation of the current event.
    * See https://developer.mozilla.org/en-US/docs/Web/API/event.stopPropagation.
-   * @override
    * @api
    */
   stopPropagation() {
@@ -105,6 +100,5 @@ class MapBrowserEvent extends MapEvent {
     this.originalEvent.stopPropagation();
   }
 }
-
 
 export default MapBrowserEvent;

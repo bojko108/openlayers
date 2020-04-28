@@ -1,16 +1,15 @@
 /**
  * @module ol/style/Icon
  */
-import {getUid} from '../util.js';
-import ImageState from '../ImageState.js';
-import {assert} from '../asserts.js';
-import {asArray} from '../color.js';
 import EventType from '../events/EventType.js';
 import IconAnchorUnits from './IconAnchorUnits.js';
-import {get as getIconImage} from './IconImage.js';
 import IconOrigin from './IconOrigin.js';
+import ImageState from '../ImageState.js';
 import ImageStyle from './Image.js';
-
+import {asArray} from '../color.js';
+import {assert} from '../asserts.js';
+import {get as getIconImage} from './IconImage.js';
+import {getUid} from '../util.js';
 
 /**
  * @typedef {Object} Options
@@ -33,6 +32,7 @@ import ImageStyle from './Image.js';
  * to provide the size of the image, with the `imgSize` option.
  * @property {Array<number>} [offset=[0, 0]] Offset, which, together with the size and the offset origin, define the
  * sub-rectangle to use from the original icon image.
+ * @property {Array<number>} [displacement=[0,0]] Displacement the icon
  * @property {import("./IconOrigin.js").default} [offsetOrigin='top-left'] Origin of the offset: `bottom-left`, `bottom-right`,
  * `top-left` or `top-right`.
  * @property {number} [opacity=1] Opacity of the icon.
@@ -45,7 +45,6 @@ import ImageStyle from './Image.js';
  * for SVG images in Internet Explorer 11. The provided `imgSize` needs to match the actual size of the image.
  * @property {string} [src] Image source URI.
  */
-
 
 /**
  * @classdesc
@@ -77,14 +76,16 @@ class Icon extends ImageStyle {
     /**
      * @type {boolean}
      */
-    const rotateWithView = options.rotateWithView !== undefined ?
-      options.rotateWithView : false;
+    const rotateWithView =
+      options.rotateWithView !== undefined ? options.rotateWithView : false;
 
     super({
       opacity: opacity,
       rotation: rotation,
       scale: scale,
-      rotateWithView: rotateWithView
+      displacement:
+        options.displacement !== undefined ? options.displacement : [0, 0],
+      rotateWithView: rotateWithView,
     });
 
     /**
@@ -103,29 +104,35 @@ class Icon extends ImageStyle {
      * @private
      * @type {import("./IconOrigin.js").default}
      */
-    this.anchorOrigin_ = options.anchorOrigin !== undefined ?
-      options.anchorOrigin : IconOrigin.TOP_LEFT;
+    this.anchorOrigin_ =
+      options.anchorOrigin !== undefined
+        ? options.anchorOrigin
+        : IconOrigin.TOP_LEFT;
 
     /**
      * @private
      * @type {import("./IconAnchorUnits.js").default}
      */
-    this.anchorXUnits_ = options.anchorXUnits !== undefined ?
-      options.anchorXUnits : IconAnchorUnits.FRACTION;
+    this.anchorXUnits_ =
+      options.anchorXUnits !== undefined
+        ? options.anchorXUnits
+        : IconAnchorUnits.FRACTION;
 
     /**
      * @private
      * @type {import("./IconAnchorUnits.js").default}
      */
-    this.anchorYUnits_ = options.anchorYUnits !== undefined ?
-      options.anchorYUnits : IconAnchorUnits.FRACTION;
+    this.anchorYUnits_ =
+      options.anchorYUnits !== undefined
+        ? options.anchorYUnits
+        : IconAnchorUnits.FRACTION;
 
     /**
      * @private
      * @type {?string}
      */
     this.crossOrigin_ =
-        options.crossOrigin !== undefined ? options.crossOrigin : null;
+      options.crossOrigin !== undefined ? options.crossOrigin : null;
 
     /**
      * @type {HTMLImageElement|HTMLCanvasElement}
@@ -142,22 +149,19 @@ class Icon extends ImageStyle {
      */
     let src = options.src;
 
-    assert(!(src !== undefined && image),
-      4); // `image` and `src` cannot be provided at the same time
-    assert(!image || (image && imgSize),
-      5); // `imgSize` must be set when `image` is provided
+    assert(!(src !== undefined && image), 4); // `image` and `src` cannot be provided at the same time
+    assert(!image || (image && imgSize), 5); // `imgSize` must be set when `image` is provided
 
     if ((src === undefined || src.length === 0) && image) {
       src = /** @type {HTMLImageElement} */ (image).src || getUid(image);
     }
-    assert(src !== undefined && src.length > 0,
-      6); // A defined and non-empty `src` or `image` must be provided
+    assert(src !== undefined && src.length > 0, 6); // A defined and non-empty `src` or `image` must be provided
 
     /**
      * @type {import("../ImageState.js").default}
      */
-    const imageState = options.src !== undefined ?
-      ImageState.IDLE : ImageState.LOADED;
+    const imageState =
+      options.src !== undefined ? ImageState.IDLE : ImageState.LOADED;
 
     /**
      * @private
@@ -170,20 +174,27 @@ class Icon extends ImageStyle {
      * @type {import("./IconImage.js").default}
      */
     this.iconImage_ = getIconImage(
-      image, /** @type {string} */ (src), imgSize, this.crossOrigin_, imageState, this.color_);
+      image,
+      /** @type {string} */ (src),
+      imgSize,
+      this.crossOrigin_,
+      imageState,
+      this.color_
+    );
 
     /**
      * @private
      * @type {Array<number>}
      */
     this.offset_ = options.offset !== undefined ? options.offset : [0, 0];
-
     /**
      * @private
      * @type {import("./IconOrigin.js").default}
      */
-    this.offsetOrigin_ = options.offsetOrigin !== undefined ?
-      options.offsetOrigin : IconOrigin.TOP_LEFT;
+    this.offsetOrigin_ =
+      options.offsetOrigin !== undefined
+        ? options.offsetOrigin
+        : IconOrigin.TOP_LEFT;
 
     /**
      * @private
@@ -196,7 +207,6 @@ class Icon extends ImageStyle {
      * @type {import("../size.js").Size}
      */
     this.size_ = options.size !== undefined ? options.size : null;
-
   }
 
   /**
@@ -211,7 +221,10 @@ class Icon extends ImageStyle {
       anchorXUnits: this.anchorXUnits_,
       anchorYUnits: this.anchorYUnits_,
       crossOrigin: this.crossOrigin_,
-      color: (this.color_ && this.color_.slice) ? this.color_.slice() : this.color_ || undefined,
+      color:
+        this.color_ && this.color_.slice
+          ? this.color_.slice()
+          : this.color_ || undefined,
       src: this.getSrc(),
       offset: this.offset_.slice(),
       offsetOrigin: this.offsetOrigin_,
@@ -219,12 +232,14 @@ class Icon extends ImageStyle {
       opacity: this.getOpacity(),
       scale: this.getScale(),
       rotation: this.getRotation(),
-      rotateWithView: this.getRotateWithView()
+      rotateWithView: this.getRotateWithView(),
     });
   }
 
   /**
-   * @inheritDoc
+   * Get the anchor point in pixels. The anchor determines the center point for the
+   * symbolizer.
+   * @return {Array<number>} Anchor.
    * @api
    */
   getAnchor() {
@@ -233,8 +248,10 @@ class Icon extends ImageStyle {
     }
     let anchor = this.anchor_;
     const size = this.getSize();
-    if (this.anchorXUnits_ == IconAnchorUnits.FRACTION ||
-        this.anchorYUnits_ == IconAnchorUnits.FRACTION) {
+    if (
+      this.anchorXUnits_ == IconAnchorUnits.FRACTION ||
+      this.anchorYUnits_ == IconAnchorUnits.FRACTION
+    ) {
       if (!size) {
         return null;
       }
@@ -254,12 +271,16 @@ class Icon extends ImageStyle {
       if (anchor === this.anchor_) {
         anchor = this.anchor_.slice();
       }
-      if (this.anchorOrigin_ == IconOrigin.TOP_RIGHT ||
-          this.anchorOrigin_ == IconOrigin.BOTTOM_RIGHT) {
+      if (
+        this.anchorOrigin_ == IconOrigin.TOP_RIGHT ||
+        this.anchorOrigin_ == IconOrigin.BOTTOM_RIGHT
+      ) {
         anchor[0] = -anchor[0] + size[0];
       }
-      if (this.anchorOrigin_ == IconOrigin.BOTTOM_LEFT ||
-          this.anchorOrigin_ == IconOrigin.BOTTOM_RIGHT) {
+      if (
+        this.anchorOrigin_ == IconOrigin.BOTTOM_LEFT ||
+        this.anchorOrigin_ == IconOrigin.BOTTOM_RIGHT
+      ) {
         anchor[1] = -anchor[1] + size[1];
       }
     }
@@ -292,7 +313,6 @@ class Icon extends ImageStyle {
    * Get the image icon.
    * @param {number} pixelRatio Pixel ratio.
    * @return {HTMLImageElement|HTMLCanvasElement} Image or Canvas element.
-   * @override
    * @api
    */
   getImage(pixelRatio) {
@@ -300,35 +320,37 @@ class Icon extends ImageStyle {
   }
 
   /**
-   * @override
+   * @return {import("../size.js").Size} Image size.
    */
   getImageSize() {
     return this.iconImage_.getSize();
   }
 
   /**
-   * @override
+   * @return {import("../size.js").Size} Size of the hit-detection image.
    */
   getHitDetectionImageSize() {
     return this.getImageSize();
   }
 
   /**
-   * @override
+   * @return {import("../ImageState.js").default} Image state.
    */
   getImageState() {
     return this.iconImage_.getImageState();
   }
 
   /**
-   * @override
+   * @param {number} pixelRatio Pixel ratio.
+   * @return {HTMLImageElement|HTMLCanvasElement} Image element.
    */
   getHitDetectionImage(pixelRatio) {
     return this.iconImage_.getHitDetectionImage(pixelRatio);
   }
 
   /**
-   * @inheritDoc
+   * Get the origin of the symbolizer.
+   * @return {Array<number>} Origin.
    * @api
    */
   getOrigin() {
@@ -336,6 +358,7 @@ class Icon extends ImageStyle {
       return this.origin_;
     }
     let offset = this.offset_;
+    const displacement = this.getDisplacement();
 
     if (this.offsetOrigin_ != IconOrigin.TOP_LEFT) {
       const size = this.getSize();
@@ -344,15 +367,21 @@ class Icon extends ImageStyle {
         return null;
       }
       offset = offset.slice();
-      if (this.offsetOrigin_ == IconOrigin.TOP_RIGHT ||
-          this.offsetOrigin_ == IconOrigin.BOTTOM_RIGHT) {
+      if (
+        this.offsetOrigin_ == IconOrigin.TOP_RIGHT ||
+        this.offsetOrigin_ == IconOrigin.BOTTOM_RIGHT
+      ) {
         offset[0] = iconImageSize[0] - size[0] - offset[0];
       }
-      if (this.offsetOrigin_ == IconOrigin.BOTTOM_LEFT ||
-          this.offsetOrigin_ == IconOrigin.BOTTOM_RIGHT) {
+      if (
+        this.offsetOrigin_ == IconOrigin.BOTTOM_LEFT ||
+        this.offsetOrigin_ == IconOrigin.BOTTOM_RIGHT
+      ) {
         offset[1] = iconImageSize[1] - size[1] - offset[1];
       }
     }
+    offset[0] += displacement[0];
+    offset[1] += displacement[1];
     this.origin_ = offset;
     return this.origin_;
   }
@@ -367,7 +396,8 @@ class Icon extends ImageStyle {
   }
 
   /**
-   * @inheritDoc
+   * Get the size of the icon (in pixels).
+   * @return {import("../size.js").Size} Image size.
    * @api
    */
   getSize() {
@@ -375,7 +405,7 @@ class Icon extends ImageStyle {
   }
 
   /**
-   * @override
+   * @param {function(import("../events/Event.js").default): void} listener Listener function.
    */
   listenImageChange(listener) {
     this.iconImage_.addEventListener(EventType.CHANGE, listener);
@@ -386,7 +416,6 @@ class Icon extends ImageStyle {
    * When rendering a feature with an icon style, the vector renderer will
    * automatically call this method. However, you might want to call this
    * method yourself for preloading or other purposes.
-   * @override
    * @api
    */
   load() {
@@ -394,12 +423,11 @@ class Icon extends ImageStyle {
   }
 
   /**
-   * @override
+   * @param {function(import("../events/Event.js").default): void} listener Listener function.
    */
   unlistenImageChange(listener) {
     this.iconImage_.removeEventListener(EventType.CHANGE, listener);
   }
 }
-
 
 export default Icon;

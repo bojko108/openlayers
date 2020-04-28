@@ -3,15 +3,14 @@
  */
 import {abstract} from '../util.js';
 
-
 /**
  * @typedef {Object} Options
  * @property {number} opacity
  * @property {boolean} rotateWithView
  * @property {number} rotation
  * @property {number} scale
+ * @property {Array<number>} displacement
  */
-
 
 /**
  * @classdesc
@@ -26,7 +25,6 @@ class ImageStyle {
    * @param {Options} options Options.
    */
   constructor(options) {
-
     /**
      * @private
      * @type {number}
@@ -51,6 +49,11 @@ class ImageStyle {
      */
     this.scale_ = options.scale;
 
+    /**
+     * @private
+     * @type {Array<number>}
+     */
+    this.displacement_ = options.displacement;
   }
 
   /**
@@ -63,7 +66,8 @@ class ImageStyle {
       opacity: this.getOpacity(),
       scale: this.getScale(),
       rotation: this.getRotation(),
-      rotateWithView: this.getRotateWithView()
+      rotateWithView: this.getRotateWithView(),
+      displacement: this.getDisplacement().slice(),
     });
   }
 
@@ -101,6 +105,15 @@ class ImageStyle {
    */
   getScale() {
     return this.scale_;
+  }
+
+  /**
+   * Get the displacement of the shape
+   * @return {Array<number>} Shape's center displacement
+   * @api
+   */
+  getDisplacement() {
+    return this.displacement_;
   }
 
   /**
@@ -216,7 +229,6 @@ class ImageStyle {
   /**
    * @abstract
    * @param {function(import("../events/Event.js").default): void} listener Listener function.
-   * @template T
    */
   listenImageChange(listener) {
     abstract();
@@ -233,7 +245,6 @@ class ImageStyle {
   /**
    * @abstract
    * @param {function(import("../events/Event.js").default): void} listener Listener function.
-   * @template T
    */
   unlistenImageChange(listener) {
     abstract();
