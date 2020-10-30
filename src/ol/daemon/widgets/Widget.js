@@ -1,8 +1,8 @@
 /**
  * @module ol/daemon/widgets/Widget
  */
-import EventEmitter from '../emitter';
-import { unByKey } from '../../Observable';
+import EventEmitter from "../emitter";
+import { unByKey } from "../../Observable";
 
 /**
  * @typedef WidgetConfig
@@ -13,6 +13,7 @@ import { unByKey } from '../../Observable';
  * @property {Number} [hitTolerance] hit-detection tolerance in pixels
  * @property {Boolean} [addToSelection] if `true` selection will be extended
  * and not cleared on new features
+ * @property {Boolean} [singleSelect] If `true` only select by click is enabled (select by window is not)
  * @property {Function} [handler] - function executed when `options.mapEventType` is triggered
  */
 
@@ -65,7 +66,8 @@ export default class Widget extends EventEmitter {
    * @param {Boolean} active
    */
   set active(active) {
-    if (!this.map) throw '"map" is undefined. Call "widget.setMap()" before activating this widget';
+    if (!this.map)
+      throw '"map" is undefined. Call "widget.setMap()" before activating this widget';
     this._active = active;
   }
   /**
@@ -105,7 +107,7 @@ export default class Widget extends EventEmitter {
 
     this._mapEventType = mapEventType;
 
-    this._listenerKey = this._map.on(this.mapEventType, event => {
+    this._listenerKey = this._map.on(this.mapEventType, (event) => {
       if (this.active) {
         this._handler(event);
       }

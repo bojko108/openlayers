@@ -41,7 +41,6 @@ export default class UgisVectorLayer extends VectorLayer {
   /**
    * Create a renderer for this layer.
    * @return {import("../renderer/Layer.js").default} A layer renderer.
-   * @protected
    */
   createRenderer() {
     return new CanvasVectorLayerRenderer(this);
@@ -76,11 +75,11 @@ export default class UgisVectorLayer extends VectorLayer {
 
         let features = this._format.readFeatures(data, {
           dataProjection: this.layerInfo.sourceCRS,
-          featureProjection: projection.getCode()
+          featureProjection: projection.getCode(),
         });
 
         this.addFeatures(features);
-      }
+      },
     });
   }
 }

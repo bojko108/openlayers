@@ -29,9 +29,13 @@ export const EnumLayerType = {
    */
   UGIS: "ugis",
   /**
+   * Layer loading features from a static GeoJSON file
+   */
+  GEOJSON: "geojson",
+  /**
    * Group layer
    */
-  GROUP: "group"
+  GROUP: "group",
 };
 
 export default class LayerInfo {
@@ -217,7 +221,7 @@ export default class LayerInfo {
      * @type {Array<Field>}
      */
     this._fields = layerInfo.fields
-      ? layerInfo.fields.map(field => new Field(field))
+      ? layerInfo.fields.map((field) => new Field(field))
       : [];
     /**
      * list of relationships
@@ -225,7 +229,7 @@ export default class LayerInfo {
      */
     this._relationships = layerInfo.relationships
       ? layerInfo.relationships.map(
-          relationship => new Relationship(relationship)
+          (relationship) => new Relationship(relationship)
         )
       : [];
 

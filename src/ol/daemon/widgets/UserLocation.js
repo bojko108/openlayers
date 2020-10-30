@@ -33,7 +33,7 @@ const defaultOptions = {
   positionOptions: {
     enableHighAccuracy: true,
     timeout: 15000,
-    maximumAge: 0
+    maximumAge: 0,
   },
   myLocationTitle: "My Location",
   zoomToTitle: "Zoom to",
@@ -43,17 +43,17 @@ const defaultOptions = {
       fill: { color: "#FFFF00" },
       stroke: {
         color: "#1589FF",
-        width: 5
-      }
-    }
+        width: 5,
+      },
+    },
   },
   flash: {
     duration: 1000,
     radius: 5,
     red: 0,
     green: 255,
-    blue: 0
-  }
+    blue: 0,
+  },
 };
 
 export default class UserLocationWidget extends Widget {
@@ -99,6 +99,10 @@ export default class UserLocationWidget extends Widget {
       defaultOptions,
       options.positionOptions
     );
+
+    if (this.active) {
+      this.activate();
+    }
   }
 
   /**
@@ -147,10 +151,10 @@ export default class UserLocationWidget extends Widget {
     this.map.defaultLayer.addFeature(this._userLocation);
 
     this._watchId = navigator.geolocation.watchPosition(
-      location => {
+      (location) => {
         this._showPosition(location);
       },
-      error => {
+      (error) => {
         console.error("(" + error.code + "): " + error.message);
       },
       this._positionOptions

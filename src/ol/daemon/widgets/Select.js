@@ -1,9 +1,9 @@
 /**
  * @module ol/daemon/widgets/SelectWidget
  */
-import DragBox from '../../interaction/DragBox';
-import Widget from './Widget';
-import MapBrowserEventType from '../../MapBrowserEventType';
+import DragBox from "../../interaction/DragBox";
+import Widget from "./Widget";
+import MapBrowserEventType from "../../MapBrowserEventType";
 
 /**
  * Constants for selection event types.
@@ -13,7 +13,7 @@ export const SelectionEventType = {
   /**
    * Emitted when selection is changed
    */
-  CHANGED: 'changed'
+  CHANGED: "changed",
 };
 
 /**
@@ -35,8 +35,9 @@ export default class SelectWidget extends Widget {
      * @param {import('../../MapBrowserEventType')} event
      */
     // @ts-ignore
-    options.handler = event => this.__handleMapEvent(event);
-    options.mapEventType = options.mapEventType || MapBrowserEventType.SINGLECLICK;
+    options.handler = (event) => this.__handleMapEvent(event);
+    options.mapEventType =
+      options.mapEventType || MapBrowserEventType.SINGLECLICK;
 
     // @ts-ignore
     super(options);
@@ -47,7 +48,10 @@ export default class SelectWidget extends Widget {
      * @type {DragBox}
      * @see http://openlayers.org/en/latest/apidoc/ol.interaction.DragBox.html
      */
-    this._dragBoxInteraction = new DragBox({ className: 'dm-dragbox', onBoxEnd: () => this.__onDragBoxEnd() });
+    this._dragBoxInteraction = new DragBox({
+      className: "dm-dragbox",
+      onBoxEnd: () => this.__onDragBoxEnd(),
+    });
     this._dragBoxInteraction.setActive(false);
 
     /**
@@ -60,7 +64,15 @@ export default class SelectWidget extends Widget {
      * if `true` selection will be extended and not cleared on new features
      * @type {Boolean}
      */
-    this._addToSelection = options.addToSelection !== undefined ? options.addToSelection : false;
+    this._addToSelection =
+      options.addToSelection !== undefined ? options.addToSelection : false;
+
+    /**
+     * If `true` only select by click is enabled (select by window is not)
+     * @type {Boolean}
+     */
+    this._singleSelect =
+      options.singleSelect !== undefined ? options.singleSelect : false;
 
     /**
      * Array of crrently selected features
@@ -76,7 +88,7 @@ export default class SelectWidget extends Widget {
     }
 
     if (this.active) {
-      this.activate(this._addToSelection);
+      this.activate(this._singleSelect, this._addToSelection);
     }
   }
 
@@ -93,6 +105,20 @@ export default class SelectWidget extends Widget {
    */
   set addToSelection(value) {
     this._addToSelection = value;
+  }
+  /**
+   * If `true` only select by click is enabled (select by window is not)
+   * @type {Boolean}
+   */
+  get singleSelect() {
+    return this._singleSelect;
+  }
+  /**
+   * Set single select parameter
+   * @param {Boolean} value - If `true` only select by click is enabled (select by window is not)
+   */
+  set singleSelect(value) {
+    this._singleSelect = value;
   }
 
   /**
@@ -231,7 +257,7 @@ export default class SelectWidget extends Widget {
    */
   __setSelectedState(selection) {
     // @ts-ignore
-    selection.forEach(feature => feature.setSelected(true));
+    selection.forEach((feature) => feature.setSelected(true));
   }
 
   /**
@@ -241,7 +267,7 @@ export default class SelectWidget extends Widget {
    */
   __clearSelectedState(selection) {
     // @ts-ignore
-    selection.forEach(feature => feature.setSelected(false));
+    selection.forEach((feature) => feature.setSelected(false));
   }
 
   /**
@@ -257,9 +283,9 @@ export default class SelectWidget extends Widget {
 
     let oldSelectionCount = this._selected.length;
 
-    this.map.selectableLayers.forEach(layer => {
+    this.map.selectableLayers.forEach((layer) => {
       // @ts-ignore
-      layer.getSource().forEachFeatureIntersectingExtent(extent, feature => {
+      layer.getSource().forEachFeatureIntersectingExtent(extent, (feature) => {
         // @ts-ignore
         if (this.isSelected(feature) === false) {
           this._selected.push(feature);
@@ -286,15 +312,15 @@ export default class SelectWidget extends Widget {
 
     this.map.forEachFeatureAtPixel(
       event.pixel,
-      feature => {
+      (feature) => {
         // @ts-ignore
         if (this.isSelected(feature) === false) {
           this._selected.push(feature);
         }
       },
       {
-        layerFilter: layer => layer.layerInfo.selectable,
-        hitTolerance: this._hitTolerance
+        layerFilter: (layer) => layer.layerInfo.selectable,
+        hitTolerance: this._hitTolerance,
       }
     );
 

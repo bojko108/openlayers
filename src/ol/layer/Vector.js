@@ -20,6 +20,7 @@ import {
   getDefaultSelectStyle,
   getDefaultHighlightStyle,
 } from "../daemon/styles/defaultStyle.js";
+import Event from "../events/Event.js";
 
 /**
  * @classdesc
@@ -117,6 +118,7 @@ class VectorLayer extends BaseVectorLayer {
    */
   addFeatures(features) {
     this.getSource().addFeatures(features);
+    this.dispatchEvent(new FeaturesLoadedEvent(features));
   }
   /**
    * Add a feature to layer's source.
@@ -299,6 +301,38 @@ class VectorLayer extends BaseVectorLayer {
     // @ts-ignore
     const mpu = METERS_PER_UNIT[projection.getUnits()];
     return scale / (mpu * 39.37 * (25.4 / 0.28));
+  }
+}
+
+/**
+ * Features loaded event constant
+ * @enum {String}
+ */
+export const FeaturesLoadedEventType = {
+  /**
+   * Emitted when features are added to a vector source
+   */
+  FEATURES_LOADED: "features-loaded",
+};
+
+/**
+ * @classdesc
+ * Event emitted when features are loaded to the vector layer
+ */
+export class FeaturesLoadedEvent extends Event {
+  /**
+   * @param {Array<import("../Feature.js").default>} features loaded features
+   */
+  constructor(features) {
+    super(FeaturesLoadedEventType.FEATURES_LOADED);
+
+    /**
+     * The coordinate of the drag event.
+     * @const
+     * @type {Array<import("../Feature.js").default>}
+     * @api
+     */
+    this.features = features;
   }
 }
 

@@ -8,6 +8,7 @@ import ArcGISDynamicMapServiceLayer from "../../layer/ArcGISDynamicMapServiceLay
 import VectorSource from "../../source/Vector";
 import DaemonVectorLayer from "../../layer/DaemonVectorLayer";
 import UgisVectorLayer from "../../layer/UgisVectorLayer";
+import GeoJSONLayer from "../../layer/GeoJSONLayer";
 
 export { addDomain, getDomain, hasDomain, Domain, Field } from "./fields";
 
@@ -16,7 +17,7 @@ export { addDomain, getDomain, hasDomain, Domain, Field } from "./fields";
  * @param {import('./Basemaps').BasemapSource} options
  * @return {TileSource}
  */
-export const createBasemapSource = options => {
+export const createBasemapSource = (options) => {
   switch (options.provider) {
     case EnumBasemaps.BGMOUNTAINS:
       return Basemaps.BGMountains;
@@ -55,7 +56,7 @@ export const createBasemapSource = options => {
  * @param {import('../../layer/BaseTile').Options|Object} options
  * @return {TileLayer}
  */
-export const createBasemapLayer = options => {
+export const createBasemapLayer = (options) => {
   const source = createBasemapSource(options.metadata);
   options.source = source;
   return new TileLayer(options);
@@ -65,13 +66,13 @@ export const createBasemapLayer = options => {
  * Creates a new operational layer - vector layer
  *
  * @param {import('../../layer/BaseVector').Options|Object} options
- * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer|UgisVectorLayer}
+ * @return {LayerGroup|ArcGISDynamicMapServiceLayer|DaemonVectorLayer|VectorLayer|UgisVectorLayer|GeoJSONLayer}
  */
-export const createOperationalLayer = options => {
+export const createOperationalLayer = (options) => {
   if (options.metadata) {
     switch (options.metadata.type) {
       case EnumLayerType.GROUP:
-        options.layers = options.layers.map(layer =>
+        options.layers = options.layers.map((layer) =>
           createOperationalLayer(layer)
         );
         return new LayerGroup(options);
@@ -81,6 +82,8 @@ export const createOperationalLayer = options => {
         return new DaemonVectorLayer(options);
       case EnumLayerType.UGIS:
         return new UgisVectorLayer(options);
+      case EnumLayerType.GEOJSON:
+        return new GeoJSONLayer(options);
       default:
         options.source = new VectorSource(options.source);
         return new VectorLayer(options);
